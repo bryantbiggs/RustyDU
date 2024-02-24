@@ -46,8 +46,7 @@ UiPath Document Understanding offers standalone capabilities, allowing integrati
 
 1. Place the documents you want to process in the specified folder (`example_documents` by default).
 
-2. Run the main script `main.rs` to process the documents:
-
+2. Run the main script `cargo run` to process the documents:
 
 3. Monitor the console output for processing status and any errors.
 
