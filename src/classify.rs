@@ -1,6 +1,6 @@
 use reqwest::{Client, header::{AUTHORIZATION, CONTENT_TYPE}};
 use serde::{Serialize, Deserialize};
-use serde_json::json;
+use serde_json::{json, Value};
 
 pub struct Classify {
     base_url: String,
@@ -36,7 +36,7 @@ impl Classify {
         }
     }
 
-    pub async fn classify_document(&self, document_id: &str, classifier: &str, prompts: Option<serde_json::Map<String, serde_json::Value>>, validate_classification: bool) -> Option<String> {
+    pub async fn classify_document(&self, document_id: &str, classifier: &str, prompts: Option<Value>, validate_classification: bool) -> Option<String> {
         // Define the API endpoint for document classification
         let api_url = format!("{}/{}/classifiers/{}/classification?api-version=1", self.base_url, self.project_id, classifier);
 

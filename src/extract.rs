@@ -1,5 +1,6 @@
 use reqwest::{Client, header::{AUTHORIZATION, CONTENT_TYPE}};
 use serde::{Serialize, Deserialize};
+use serde_json::Value;
 
 pub struct Extract {
     base_url: String,
@@ -28,7 +29,7 @@ impl Extract {
         }
     }
 
-    pub async fn extract_document(&self, extractor_id: &str, document_id: &str, prompts: Option<serde_json::Map<String, serde_json::Value>>) -> Option<ExtractedData> {
+    pub async fn extract_document(&self, extractor_id: &str, document_id: &str, prompts: Option<Value>) -> Option<ExtractedData> {
         // Define the API endpoint for document extraction
         let api_url = format!("{}/{}/extractors/{}/extraction?api-version=1", self.base_url, self.project_id, extractor_id);
 

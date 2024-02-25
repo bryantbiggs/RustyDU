@@ -7,7 +7,8 @@ mod result_utils;
 
 use std::env;
 use std::ffi::OsStr;
-use clap::{Arg, ArgAction, Command};
+use std::path::PathBuf;
+use clap::{Arg, ArgAction, value_parser, Command};
 use auth::Authentication;
 use digitize::Digitize;
 use classify::Classify;
@@ -113,7 +114,7 @@ fn process_documents_in_folder(folder_path: &str, validate_classification: bool,
                                                         if let Err(err) = CSVWriter::write_validated_results_to_csv(&validated_results, &extraction_results, &path) {
                                                             eprintln!("Error writing validated results to CSV: {}", err);
                                                         }
-                                                        CSVWriter::pprint_csv_results(&path);
+                                                        CSVWriter::write_validated_results_to_csv(validated_results, extraction_results, &path);
                                                     }
                                                 }
                                             }
@@ -138,11 +139,9 @@ fn main() {
         .author("Your Name")
         .about("Process documents in a folder")
         .arg(Arg::new("folder")
-            .short("f")
             .long("folder")
             .value_name("FOLDER")
             .help("Sets the folder path containing documents to process")
-            .action(clap::ArgAction::Set)
             .required(true))
         .arg(Arg::new("validate_classification")
             .long("validate-classification")
@@ -158,7 +157,7 @@ fn main() {
             .help("Enables generative extraction"))
         .get_matches();
 
-    let folder_path = matches.try_get_one("folder");
+    let folder_path = matches.get_one("folder").map(PathBuf::from).unwrap();
     let validate_classification = matches.get_flag("validate_classification");
     let validate_extraction = matches.get_flag("validate_extraction");
     let generative_classification = matches.get_flag("generative_classification");
@@ -166,6 +165,6 @@ fn main() {
 
 
     // Call the main processing function with the parsed arguments
-    process_documents_in_folder(folder_path, validate_classification, validate_extraction,
+    process_documents_in_folder(folder_path.to_str().unwrap(), validate_classification, validate_extraction,
                                 generative_classification, generative_extraction);
 }

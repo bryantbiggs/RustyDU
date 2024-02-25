@@ -1,5 +1,6 @@
 use reqwest::{Client, header::AUTHORIZATION};
 use std::{fs::File, io::Read, path::Path};
+use std::path::PathBuf;
 
 pub struct Digitize {
     base_url: String,
@@ -16,7 +17,7 @@ impl Digitize {
         }
     }
 
-    pub async fn start(&self, document_path: &str) -> Option<String> {
+    pub async fn start(&self, document_path: &PathBuf) -> Option<String> {
         // Define the API endpoint for digitization
         let api_url = format!("{}/{}/digitization/start?api-version=1", self.base_url, self.project_id);
 

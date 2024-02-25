@@ -1,13 +1,13 @@
 use csv::Writer;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 pub struct CSVWriter;
 
 impl CSVWriter {
     pub fn write_extraction_results_to_csv(
         extraction_results: &serde_json::Value,
-        document_path: &str,
+        document_path: &PathBuf,
         output_directory: &str,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let fields_to_extract = ["FieldName", "Value", "OcrConfidence", "Confidence", "IsMissing"];
@@ -45,16 +45,17 @@ impl CSVWriter {
     pub fn write_validated_results_to_csv(
         validated_results: &serde_json::Value,
         extraction_results: &serde_json::Value,
-        document_path: &str,
-        output_directory: &str,
+        document_path: &PathBuf,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let file_name = Path::new(&document_path)
             .file_stem()
             .unwrap()
             .to_string_lossy()
             .to_string();
-        let output_dir_path = Path::new(output_directory);
-        fs::create_dir_all(&output_dir_path)?;
+
+        let output_dir_path= {
+            Path::new("output_results") // Use default if not provided
+        };
 
         let output_file = output_dir_path.join(file_name + ".csv");
 
