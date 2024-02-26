@@ -15,137 +15,132 @@ struct ExtractionData<'a> {
     prompts: Option<Value>,
 }
 
-#[derive(Deserialize)]
-struct ExtractedData {
-    // Define the structure of the extracted data
-}
-
 #[derive(Debug, Serialize, Deserialize)]
 struct ExtractionResult {
-    document_id: String,
-    results_version: i32,
-    results_document: ResultsDocument,
-    extractor_payloads: Option<String>,
-    business_rules_results: Option<String>,
+    DocumentId: String,
+    ResultsVersion: i32,
+    ResultsDocument: ResultsDocument,
+    ExtractorPayloads: Option<String>,
+    BusinessRulesResults: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 struct ResultsDocument {
-    bounds: Bounds,
-    language: String,
-    document_group: String,
-    document_category: String,
-    document_type_id: String,
-    document_type_name: String,
-    document_type_data_version: i32,
-    data_version: i32,
-    document_type_source: String,
-    document_type_field: DocumentTypeField,
-    fields: Vec<Field>,
-    tables: Vec<Table>,
+    Bounds: Bounds,
+    Language: String,
+    DocumentGroup: String,
+    DocumentCategory: String,
+    DocumentTypeId: String,
+    DocumentTypeName: String,
+    DocumentTypeDataVersion: i32,
+    DataVersion: i32,
+    DocumentTypeSource: String,
+    DocumentTypeField: DocumentTypeField,
+    Fields: Vec<Field>,
+    Tables: Vec<Table>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Bounds {
-    start_page: i32,
-    page_count: i32,
-    text_start_index: i32,
-    text_length: i32,
+    StartPage: i32,
+    PageCount: i32,
+    TextStartIndex: i32,
+    TextLength: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 struct DocumentTypeField {
-    components: Vec<String>,
-    value: String,
-    unformatted_value: String,
-    reference: Reference,
-    derived_fields: Vec<String>,
-    confidence: f64,
-    operator_confirmed: bool,
-    ocr_confidence: f64,
-    text_type: String,
+    Components: Vec<String>,
+    Value: String,
+    UnformattedValue: String,
+    Reference: Reference,
+    DerivedFields: Vec<String>,
+    Confidence: f64,
+    OperatorConfirmed: bool,
+    OcrConfidence: f64,
+    TextType: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Reference {
-    text_start_index: i32,
-    text_length: i32,
-    tokens: Vec<Token>,
+    TextStartIndex: i32,
+    TextLength: i32,
+    Tokens: Vec<Token>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Token {
-    text_start_index: i32,
-    text_length: i32,
-    page: i32,
-    page_width: f64,
-    page_height: f64,
-    boxes: Vec<Vec<f64>>,
+    TextStartIndex: i32,
+    TextLength: i32,
+    Page: i32,
+    PageWidth: f64,
+    PageHeight: f64,
+    Boxes: Vec<Vec<f64>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Field {
-    field_id: String,
-    field_name: String,
-    field_type: String,
-    is_missing: bool,
-    data_source: String,
-    values: Vec<Value>,
-    data_version: i32,
-    operator_confirmed: bool,
+    FieldId: String,
+    FieldName: String,
+    FieldType: String,
+    IsMissing: bool,
+    DataSource: String,
+    Values: Vec<Value>,
+    DataVersion: i32,
+    OperatorConfirmed: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 struct FieldValue {
-    components: Vec<String>,
-    value: String,
-    unformatted_value: String,
-    reference: Reference,
-    derived_fields: Vec<String>,
-    confidence: f64,
-    operator_confirmed: bool,
-    ocr_confidence: f64,
-    text_type: String,
+    Components: Vec<String>,
+    Value: String,
+    UnformattedValue: String,
+    Reference: Reference,
+    DerivedFields: Vec<String>,
+    Confidence: f64,
+    OperatorConfirmed: bool,
+    OcrConfidence: f64,
+    TextType: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Table {
-    field_id: String,
-    field_name: String,
-    is_missing: bool,
-    data_source: String,
-    data_version: i32,
-    operator_confirmed: bool,
-    values: Vec<TableValue>,
+    FieldId: String,
+    FieldName: String,
+    IsMissing: bool,
+    DataSource: String,
+    DataVersion: i32,
+    OperatorConfirmed: bool,
+    Values: Vec<TableValue>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 struct TableValue {
-    operator_confirmed: bool,
-    confidence: f64,
-    ocr_confidence: f64,
-    cells: Vec<Cell>,
-    column_info: Vec<ColumnInfo>,
-    number_of_rows: i32,
+    OperatorConfirmed: bool,
+    Confidence: f64,
+    OcrConfidence: f64,
+    Cells: Vec<Cell>,
+    ColumnInfo: Vec<ColumnInfo>,
+    NumberOfRows: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Cell {
-    row_index: i32,
-    column_index: i32,
-    is_header: bool,
-    is_missing: bool,
-    operator_confirmed: bool,
-    data_source: String,
-    data_version: i32,
-    values: Option<Vec<String>>,
+    RowIndex: i32,
+    ColumnIndex: i32,
+    IsHeader: bool,
+    IsMissing: bool,
+    OperatorConfirmed: bool,
+    DataSource: String,
+    DataVersion: i32,
+    Values: Option<Vec<String>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 struct ColumnInfo {
-    field_id: String,
-    field_name: String,
-    field_type: String,
+    FieldId: String,
+    FieldName: String,
+    FieldType: String,
 }
 
 impl Extract {

@@ -15,12 +15,12 @@ struct ClassificationData<'a> {
     prompts: Option<Value>,
 }
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct ClassificationResults {
-    ClassificationResults: Vec<ClassificationResult>,
+    classificationResults: Vec<ClassificationResult>,
 }
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct ClassificationResult {
     DocumentTypeId: String,
     DocumentId: String,
@@ -31,19 +31,19 @@ pub struct ClassificationResult {
     ClassifierName: String,
 }
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct Reference {
     TextStartIndex: usize,
     TextLength: usize,
     Tokens: Vec<Token>,
 }
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct Token {
     // Define token fields here
 }
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct DocumentBounds {
     StartPage: usize,
     PageCount: usize,
@@ -85,13 +85,13 @@ impl Classify {
                 match response.status() {
                     reqwest::StatusCode::OK => {
                         println!("Document successfully classified!");
-                        let classification_result: ClassificationResult = response.json().await.unwrap();
+                        let classification_results: ClassificationResults = response.json().await.unwrap();
                         if validate_classification {
-                            Some(json!(classification_result).to_string())
+                            Some(json!(classification_results).to_string())
                         } else {
                             let mut document_type_id = None;
                             let mut classification_confidence = None;
-                            for result in classification_result.classificationResults {
+                            for result in classification_results.classificationResults {
                                 if result.DocumentId == document_id {
                                     document_type_id = Some(result.DocumentTypeId);
                                     classification_confidence = Some(result.Confidence);
