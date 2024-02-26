@@ -1,5 +1,5 @@
 use reqwest::{Client, header::AUTHORIZATION};
-use std::{fs::File, io::Read, path::Path};
+use std::{fs::File, io::Read};
 use std::path::PathBuf;
 
 pub struct Digitize {

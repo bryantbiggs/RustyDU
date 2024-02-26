@@ -6,9 +6,9 @@ mod validate;
 mod result_utils;
 
 use std::env;
-use std::ffi::OsStr;
 use std::path::PathBuf;
-use clap::{Arg, ArgAction, value_parser, Command};
+use clap::{Arg, Command};
+use serde_json::Value;
 use auth::Authentication;
 use digitize::Digitize;
 use classify::Classify;
@@ -28,7 +28,7 @@ fn load_env_vars() -> (String, String, String, String, String) {
 }
 
 // Function to load prompts from a JSON file based on the document type ID
-fn load_prompts(document_type_id: &str) -> Option<serde_json::Value> {
+fn load_prompts(document_type_id: &str) -> Option<Value> {
     let prompts_directory = "Generative Prompts";
     let prompts_file = format!("{}/{}_prompts.json", prompts_directory, document_type_id);
     match std::fs::read_to_string(prompts_file) {
@@ -49,7 +49,7 @@ fn load_prompts(document_type_id: &str) -> Option<serde_json::Value> {
 }
 
 // Main function to process documents in the folder
-fn process_documents_in_folder(folder_path: &str, validate_classification: bool, validate_extraction: bool, generative_classification: bool, generative_extraction: bool) {
+async fn process_documents_in_folder(folder_path: &str, validate_classification: bool, validate_extraction: bool, generative_classification: bool, generative_extraction: bool) {
     // Load environment variables
     let (app_id, app_secret, auth_url, base_url, project_id) = load_env_vars();
 
@@ -85,7 +85,7 @@ fn process_documents_in_folder(folder_path: &str, validate_classification: bool,
                                             let classification_results = if generative_extraction { "generative_extractor" } else { classification_results };
                                             if let Some(extraction_results) = extract_client.extract_document(classification_results, &document_id, extraction_prompts) {
                                                 if !validate_extraction {
-                                                    if let Err(err) = CSVWriter::write_extraction_results_to_csv(&extraction_results, &path) {
+                                                    if let Err(err) = CSVWriter::write_extraction_results_to_csv(&extraction_results, &path, "") {
                                                         eprintln!("Error writing extraction results to CSV: {}", err);
                                                     }
                                                     CSVWriter::pprint_csv_results(&path);
@@ -101,20 +101,18 @@ fn process_documents_in_folder(folder_path: &str, validate_classification: bool,
                                         }
                                     } else {
                                         let classification_results = document_type_id.clone();
-                                        if let Some(extraction_prompts) = if generative_extraction { load_prompts(&document_type_id) } else { None } {
+                                        if let extraction_prompts = if generative_extraction { load_prompts(&document_type_id) } else { None } {
                                             let classification_results = if generative_extraction { "generative_extractor" } else { classification_results };
-                                            if let Some(extraction_results) = extract_client.extract_document(classification_results, &document_id, extraction_prompts) {
+                                            if let Some(extraction_results) = extract_client.extract_document(classification_results, &document_id, extraction_prompts).await {
                                                 if !validate_extraction {
-                                                    if let Err(err) = CSVWriter::write_extraction_results_to_csv(&extraction_results, &path) {
+                                                    if let Err(err) = CSVWriter::write_extraction_results_to_csv(&extraction_results, &path, "") {
                                                         eprintln!("Error writing extraction results to CSV: {}", err);
                                                     }
-                                                    CSVWriter::pprint_csv_results(&path);
                                                 } else {
-                                                    if let Some(validated_results) = validate_client.validate_extraction_results(&document_type_id, &document_id, &extraction_results) {
+                                                    if let Some(validated_results) = validate_client.validate_extraction_results(&document_type_id, &document_id, &extraction_results).await {
                                                         if let Err(err) = CSVWriter::write_validated_results_to_csv(&validated_results, &extraction_results, &path) {
                                                             eprintln!("Error writing validated results to CSV: {}", err);
                                                         }
-                                                        CSVWriter::write_validated_results_to_csv(validated_results, extraction_results, &path);
                                                     }
                                                 }
                                             }
@@ -157,7 +155,8 @@ fn main() {
             .help("Enables generative extraction"))
         .get_matches();
 
-    let folder_path = matches.get_one("folder").map(PathBuf::from).unwrap();
+    let folder_path_str = matches.try_get_one("folder");
+    let folder_path = PathBuf::from(folder_path_str);
     let validate_classification = matches.get_flag("validate_classification");
     let validate_extraction = matches.get_flag("validate_extraction");
     let generative_classification = matches.get_flag("generative_classification");

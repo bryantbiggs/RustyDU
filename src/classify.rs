@@ -10,21 +10,45 @@ pub struct Classify {
 
 #[derive(Serialize)]
 struct ClassificationData<'a> {
-    document_id: &'a str,
+    DocumentId: &'a str,
     #[serde(flatten)]
-    prompts: Option<serde_json::Map<String, serde_json::Value>>,
+    prompts: Option<Value>,
 }
 
-#[derive(Deserialize, Serialize)]
-struct ClassificationResult {
-    classificationResults: Vec<ClassificationResultItem>,
+#[derive(Debug, serde::Deserialize)]
+pub struct ClassificationResults {
+    ClassificationResults: Vec<ClassificationResult>,
 }
 
-#[derive(Deserialize, Serialize)]
-struct ClassificationResultItem {
-    DocumentId: String,
+#[derive(Debug, serde::Deserialize)]
+pub struct ClassificationResult {
     DocumentTypeId: String,
-    Confidence: f32,
+    DocumentId: String,
+    Confidence: f64,
+    OcrConfidence: f64,
+    Reference: Reference,
+    DocumentBounds: DocumentBounds,
+    ClassifierName: String,
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub struct Reference {
+    TextStartIndex: usize,
+    TextLength: usize,
+    Tokens: Vec<Token>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub struct Token {
+    // Define token fields here
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub struct DocumentBounds {
+    StartPage: usize,
+    PageCount: usize,
+    TextStartIndex: usize,
+    TextLength: usize,
 }
 
 impl Classify {
@@ -36,13 +60,13 @@ impl Classify {
         }
     }
 
-    pub async fn classify_document(&self, document_id: &str, classifier: &str, prompts: Option<Value>, validate_classification: bool) -> Option<String> {
+    pub async fn classify_document(&self, document_id: &str, classifier: &str, prompts: Option<serde_json::Value>, validate_classification: bool) -> Option<String> {
         // Define the API endpoint for document classification
         let api_url = format!("{}/{}/classifiers/{}/classification?api-version=1", self.base_url, self.project_id, classifier);
 
         // Prepare request data
         let data = ClassificationData {
-            document_id,
+            DocumentId: document_id,
             prompts,
         };
 

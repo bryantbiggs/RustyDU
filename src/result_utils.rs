@@ -75,7 +75,7 @@ impl CSVWriter {
                 let extraction_field = extraction_results["extractionResult"]["ResultsDocument"]["Fields"]
                     .as_array()
                     .and_then(|fields| fields.iter().find(|&field| field["FieldName"] == field_name))
-                    .unwrap_or_default();
+                    .unwrap();
 
                 let extracted_value = extraction_field["Values"][0]["Value"].as_str().unwrap_or_default();
                 let confidence = extraction_field["Values"][0]["Confidence"].as_str().unwrap_or_default();

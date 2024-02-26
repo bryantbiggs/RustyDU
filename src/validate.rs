@@ -1,5 +1,6 @@
 use reqwest::{Client, header::{AUTHORIZATION, CONTENT_TYPE}};
 use std::time::Duration;
+use reqwest::header::{ACCEPT, HeaderMap};
 
 pub struct Validate {
     base_url: String,
@@ -28,11 +29,10 @@ impl Validate {
             self.base_url, self.project_id, extractor_id
         );
 
-        let headers = [
-            ("Authorization", format!("Bearer {}", self.bearer_token)),
-            ("accept", "text/plain".to_string()),
-            ("Content-Type", "application/json".to_string()),
-        ];
+        let mut headers = HeaderMap::new();
+        headers.insert(AUTHORIZATION, format!("Bearer {}", self.bearer_token).parse().unwrap());
+        headers.insert(ACCEPT, "text/plain".parse().unwrap());
+        headers.insert(CONTENT_TYPE, "application/json".parse().unwrap());
 
         let payload = serde_json::json!({
             "documentId": document_id,
@@ -49,7 +49,7 @@ impl Validate {
             Ok(response) => {
                 if response.status().is_success() {
                     println!("Validation request sent!");
-                    if let Some(operation_id) = self.submit_extraction_validation_request(extractor_id, &response).await {
+                    if let Some(operation_id) = self.submit_extraction_validation_request(extractor_id, &(response)).await {
                         return Some(operation_id);
                     }
                 } else {
@@ -69,7 +69,6 @@ impl Validate {
                 return None;
             }
         };
-
         let operation_id = response_data.get("operationId").cloned()?;
         let extractor_id = match response_data["classificationResults"][0]["DocumentTypeId"].as_str() {
             Some(id) => id,
@@ -158,11 +157,10 @@ impl Validate {
             None => return None,
         };
 
-        let headers = [
-            ("Authorization", format!("Bearer {}", self.bearer_token)),
-            ("accept", "text/plain".to_string()),
-            ("Content-Type", "application/json".to_string()),
-        ];
+        let mut headers = HeaderMap::new();
+        headers.insert(AUTHORIZATION, format!("Bearer {}", self.bearer_token).parse().unwrap());
+        headers.insert(ACCEPT, "text/plain".parse().unwrap());
+        headers.insert(CONTENT_TYPE, "application/json".parse().unwrap());
 
         let payload = serde_json::json!({
             "documentId": document_id,
@@ -246,11 +244,20 @@ impl Validate {
     }
 
     async fn get_document_type_id(&self, operation_id: &str) -> Option<String> {
-        let url = format!("{}/{}/classifiers/ml-classification/validation/result/{}?api-version=1", self.base_url, self.project_id, operation_id);
-        let headers = [("accept", "application/json"), ("Authorization", format!("Bearer {}", self.bearer_token))];
+        let api_url = format!("{}/{}/classifiers/ml-classification/validation/result/{}?api-version=1", self.base_url, self.project_id, operation_id);
+
+        let mut headers = HeaderMap::new();
+        headers.insert(AUTHORIZATION, format!("Bearer {}", self.bearer_token).parse().unwrap());
+        headers.insert(ACCEPT, "text/plain".parse().unwrap());
+        headers.insert(CONTENT_TYPE, "application/json".parse().unwrap());
 
         loop {
-            match Client::new().get(&url).headers(headers).send().await {
+            let mut request = Client::new().get(&api_url);
+            for (name, value) in &headers {
+                request = request.header(name.clone(), value.clone());
+            }
+
+            match request.send().await {
                 Ok(response) => {
                     let response_data: serde_json::Value = match response.json().await {
                         Ok(data) => data,
