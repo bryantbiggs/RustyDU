@@ -15,12 +15,12 @@ struct ClassificationData<'a> {
     prompts: Option<Value>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ClassificationResults {
     classificationResults: Vec<ClassificationResult>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ClassificationResult {
     DocumentTypeId: String,
     DocumentId: String,
@@ -31,19 +31,19 @@ pub struct ClassificationResult {
     ClassifierName: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Reference {
     TextStartIndex: usize,
     TextLength: usize,
     Tokens: Vec<Token>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Token {
     // Define token fields here
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct DocumentBounds {
     StartPage: usize,
     PageCount: usize,

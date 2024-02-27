@@ -78,7 +78,8 @@ async fn process_documents_in_folder(folder_path: &str, validate_classification:
                     match digitize_client.start(&path) {
                         Some(document_id) => {
                             match classify_client.classify_document(&document_id, classifier, classification_prompts.clone(), validate_classification) {
-                                Some(document_type_id) => {
+                                Some(document_type_id_value) => {
+                                    let document_type_id = document_type_id_value.as_str().unwrap_or_default().to_string();
                                     if validate_classification {
                                         if let Some(classification_results) = validate_client.validate_classification_results(&document_id, &document_type_id) {
                                             let extraction_prompts = if generative_extraction { load_prompts(&document_type_id) } else { None };
