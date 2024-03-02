@@ -48,7 +48,7 @@ fn load_prompts(document_type_id: &str) -> Option<Value> {
 
 // Main function to process documents in the folder
 async fn process_documents_in_folder(
-  folder_path: &str,
+  folder_path: &PathBuf,
   validate_classification: bool,
   validate_extraction: bool,
   generative_classification: bool,
@@ -59,7 +59,7 @@ async fn process_documents_in_folder(
 
   // Initialize Authentication
   let auth = Authentication::new(&app_id, &app_secret, &auth_url);
-  let bearer_token = auth.get_bearer_token();
+  let bearer_token = auth.get_bearer_token().await.unwrap();
 
   // Initialize API clients
   let digitize_client = Digitize::new(&base_url, &project_id, &bearer_token);
@@ -95,19 +95,23 @@ async fn process_documents_in_folder(
           || extension == "pdf"
         {
           println!("Processing document: {:?}", path);
-          match digitize_client.start(&path) {
+          match digitize_client.start(&path).await {
             Some(document_id) => {
-              match classify_client.classify_document(
-                &document_id,
-                classifier,
-                classification_prompts.clone(),
-                validate_classification,
-              ) {
+              match classify_client
+                .classify_document(
+                  &document_id,
+                  classifier,
+                  classification_prompts.clone(),
+                  validate_classification,
+                )
+                .await
+              {
                 Some(document_type_id_value) => {
                   let document_type_id = document_type_id_value.as_str().unwrap_or_default().to_string();
                   if validate_classification {
-                    if let Some(classification_results) =
-                      validate_client.validate_classification_results(&document_id, &document_type_id)
+                    if let Some(classification_results) = validate_client
+                      .validate_classification_results(&document_id, &document_type_id)
+                      .await
                     {
                       let extraction_prompts = if generative_extraction {
                         load_prompts(&document_type_id)
@@ -117,10 +121,11 @@ async fn process_documents_in_folder(
                       let classification_results = if generative_extraction {
                         "generative_extractor"
                       } else {
-                        classification_results
+                        &classification_results
                       };
-                      if let Some(extraction_results) =
-                        extract_client.extract_document(classification_results, &document_id, extraction_prompts)
+                      if let Some(extraction_results) = extract_client
+                        .extract_document(classification_results, &document_id, extraction_prompts)
+                        .await
                       {
                         if !validate_extraction {
                           if let Err(err) = CSVWriter::write_extraction_results_to_csv(&extraction_results, &path, "") {
@@ -128,11 +133,10 @@ async fn process_documents_in_folder(
                           }
                           CSVWriter::pprint_csv_results(&path);
                         } else {
-                          if let Some(validated_results) = validate_client.validate_extraction_results(
-                            &document_type_id,
-                            &document_id,
-                            &extraction_results,
-                          ) {
+                          if let Some(validated_results) = validate_client
+                            .validate_extraction_results(&document_type_id, &document_id, &extraction_results)
+                            .await
+                          {
                             if let Err(err) =
                               CSVWriter::write_validated_results_to_csv(&validated_results, &extraction_results, &path)
                             {
@@ -190,7 +194,8 @@ async fn process_documents_in_folder(
   }
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
   // Define command-line arguments using clap
   let matches = Command::new("Document Processor")
     .version("1.0")
@@ -225,8 +230,7 @@ fn main() {
     )
     .get_matches();
 
-  let folder_path_str = matches.try_get_one("folder");
-  let folder_path = PathBuf::from(folder_path_str);
+  let folder_path = matches.get_one::<PathBuf>("folder").expect("required");
   let validate_classification = matches.get_flag("validate_classification");
   let validate_extraction = matches.get_flag("validate_extraction");
   let generative_classification = matches.get_flag("generative_classification");
@@ -234,10 +238,11 @@ fn main() {
 
   // Call the main processing function with the parsed arguments
   process_documents_in_folder(
-    folder_path.to_str().unwrap(),
+    folder_path,
     validate_classification,
     validate_extraction,
     generative_classification,
     generative_extraction,
-  );
+  )
+  .await
 }

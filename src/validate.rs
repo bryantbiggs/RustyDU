@@ -73,7 +73,7 @@ impl Validate {
 
   async fn submit_extraction_validation_request(
     &self,
-    extractor_id: &str,
+    _extractor_id: &str,
     response: &reqwest::Response,
   ) -> Option<serde_json::Value> {
     let response_data: serde_json::Value = match response.json().await {

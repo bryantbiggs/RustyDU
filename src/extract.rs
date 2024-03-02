@@ -184,7 +184,7 @@ impl Extract {
         reqwest::StatusCode::OK => {
           println!("Document successfully extracted!\n");
           let extraction_results: ExtractionResult = response.json().await.unwrap();
-          Some(json!(extraction_results).unwrap())
+          Some(json!(extraction_results))
         }
         _ => {
           println!("Error: {} - {}", response.status(), response.text().await.unwrap());
