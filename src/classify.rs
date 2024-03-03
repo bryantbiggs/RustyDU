@@ -12,33 +12,34 @@ pub struct Classify {
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "PascalCase")]
 struct ClassificationData<'a> {
-  DocumentId: &'a str,
+  document_id: &'a str,
   #[serde(flatten)]
   prompts: Option<Value>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ClassificationResults {
-  pub(crate) classificationResults: Vec<ClassificationResult>,
+  pub(crate) classification_results: Vec<ClassificationResult>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ClassificationResult {
-  pub(crate) DocumentTypeId: String,
-  DocumentId: String,
-  Confidence: f64,
-  OcrConfidence: f64,
-  Reference: Reference,
-  DocumentBounds: DocumentBounds,
-  ClassifierName: String,
+  pub(crate) document_type_id: String,
+  document_id: String,
+  confidence: f64,
+  ocr_confidence: f64,
+  reference: Reference,
+  document_bounds: DocumentBounds,
+  classifier_name: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Reference {
-  TextStartIndex: usize,
-  TextLength: usize,
-  Tokens: Vec<Token>,
+  text_start_index: usize,
+  text_length: usize,
+  tokens: Vec<Token>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -48,10 +49,10 @@ pub struct Token {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DocumentBounds {
-  StartPage: usize,
-  PageCount: usize,
-  TextStartIndex: usize,
-  TextLength: usize,
+  start_page: usize,
+  page_count: usize,
+  text_start_index: usize,
+  text_length: usize,
 }
 
 impl Classify {
@@ -77,7 +78,7 @@ impl Classify {
 
     // Prepare request data
     let data = ClassificationData {
-      DocumentId: document_id,
+      document_id,
       prompts,
     };
 
@@ -99,10 +100,10 @@ impl Classify {
           let classification_results: ClassificationResults = response.json().await.unwrap();
           let mut document_type_id = None;
           let mut classification_confidence = None;
-          for result in classification_results.classificationResults {
-            if result.DocumentId == document_id {
-              document_type_id = Some(result.DocumentTypeId);
-              classification_confidence = Some(result.Confidence);
+          for result in classification_results.classification_results {
+            if result.document_id == document_id {
+              document_type_id = Some(result.document_type_id);
+              classification_confidence = Some(result.confidence);
               break;
             }
           }
