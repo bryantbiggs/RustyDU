@@ -3,7 +3,7 @@ use reqwest::{
   Client,
 };
 use serde::{Deserialize, Serialize};
-use serde_json::{Value};
+use serde_json::Value;
 
 pub struct Classify {
   base_url: String,
@@ -84,12 +84,12 @@ impl Classify {
     // Prepare request
     let client = Client::new();
     let response = client
-        .post(&api_url)
-        .header(AUTHORIZATION, format!("Bearer {}", self.bearer_token))
-        .header(CONTENT_TYPE, "application/json")
-        .json(&data)
-        .send()
-        .await;
+      .post(&api_url)
+      .header(AUTHORIZATION, format!("Bearer {}", self.bearer_token))
+      .header(CONTENT_TYPE, "application/json")
+      .json(&data)
+      .send()
+      .await;
 
     // Process response
     match response {
@@ -107,7 +107,7 @@ impl Classify {
             }
           }
           if let (Some(document_type_id), Some(classification_confidence)) =
-              (document_type_id, classification_confidence)
+            (document_type_id, classification_confidence)
           {
             println!(
               "Document Type ID: {}, Confidence: {}\n",
@@ -116,7 +116,7 @@ impl Classify {
             Some(document_type_id)
           } else {
             println!("Document ID not found in classification results.");
-            return None
+            return None;
           }
           Some(classification_results)
         }

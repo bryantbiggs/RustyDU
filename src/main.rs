@@ -87,30 +87,26 @@ async fn process_documents_in_folder(
       if let Some(extension) = path.extension() {
         let extension = extension.to_string_lossy().to_lowercase();
         if extension == "png"
-            || extension == "jpe"
-            || extension == "jpg"
-            || extension == "jpeg"
-            || extension == "tiff"
-            || extension == "tif"
-            || extension == "bmp"
-            || extension == "pdf"
+          || extension == "jpe"
+          || extension == "jpg"
+          || extension == "jpeg"
+          || extension == "tiff"
+          || extension == "tif"
+          || extension == "bmp"
+          || extension == "pdf"
         {
           println!("Processing document: {:?}", path);
           match digitize_client.start(&path).await {
             Some(document_id) => {
               match classify_client
-                  .classify_document(
-                    &document_id,
-                    classifier,
-                    classification_prompts.clone(),
-                  )
-                  .await
+                .classify_document(&document_id, classifier, classification_prompts.clone())
+                .await
               {
                 Some(classification_results) => {
                   if validate_classification {
                     if let Some(document_type_id) = validate_client
-                        .validate_classification_results(&document_id, &classification_results)
-                        .await
+                      .validate_classification_results(&document_id, &classification_results)
+                      .await
                     {
                       let extraction_prompts = if generative_extraction {
                         load_prompts(&document_type_id)
@@ -123,36 +119,27 @@ async fn process_documents_in_folder(
                         &classification_results
                       };
                       if let Some(extraction_results) = extract_client
-                          .extract_document(classification_results, &document_id, extraction_prompts)
-                          .await
+                        .extract_document(classification_results, &document_id, extraction_prompts)
+                        .await
                       {
                         if !validate_extraction {
                           if let Err(err) =
-                              CSVWriter::write_extraction_results_to_csv(
-                                &extraction_results,
-                                &path,
-                                &output_directory,
-                              )
+                            CSVWriter::write_extraction_results_to_csv(&extraction_results, &path, &output_directory)
                           {
                             eprintln!("Error writing extraction results to CSV: {}", err);
                           }
                           CSVWriter::print_csv_results(&path, &output_directory);
                         } else {
                           if let Some(validated_results) = validate_client
-                              .validate_extraction_results(
-                                &document_type_id,
-                                &document_id,
-                                &extraction_results,
-                              )
-                              .await
+                            .validate_extraction_results(&document_type_id, &document_id, &extraction_results)
+                            .await
                           {
                             if let Err(err) = CSVWriter::write_validated_results_to_csv(
                               &validated_results,
                               &extraction_results,
                               &path,
                               &output_directory,
-                            )
-                            {
+                            ) {
                               eprintln!("Error writing validated results to CSV: {}", err);
                             }
                             CSVWriter::print_csv_results(&path, &output_directory);
@@ -174,35 +161,26 @@ async fn process_documents_in_folder(
                         document_type_id
                       };
                       if let Some(extraction_results) = extract_client
-                          .extract_document(document_type_id, &document_id, extraction_prompts)
-                          .await
+                        .extract_document(document_type_id, &document_id, extraction_prompts)
+                        .await
                       {
                         if !validate_extraction {
                           if let Err(err) =
-                              CSVWriter::write_extraction_results_to_csv(
-                                &extraction_results,
-                                &path,
-                                &output_directory,
-                              )
+                            CSVWriter::write_extraction_results_to_csv(&extraction_results, &path, &output_directory)
                           {
                             eprintln!("Error writing extraction results to CSV: {}", err);
                           }
                         } else {
                           if let Some(validated_results) = validate_client
-                              .validate_extraction_results(
-                                &document_type_id,
-                                &document_id,
-                                &extraction_results,
-                              )
-                              .await
+                            .validate_extraction_results(&document_type_id, &document_id, &extraction_results)
+                            .await
                           {
                             if let Err(err) = CSVWriter::write_validated_results_to_csv(
                               &validated_results,
                               &extraction_results,
                               &path,
                               &output_directory,
-                            )
-                            {
+                            ) {
                               eprintln!("Error writing validated results to CSV: {}", err);
                             }
                           }
@@ -221,7 +199,6 @@ async fn process_documents_in_folder(
     }
   }
 }
-
 
 #[tokio::main]
 async fn main() {
@@ -258,7 +235,6 @@ async fn main() {
         .help("Enables generative extraction"),
     )
     .get_matches();
-
 
   let output_directory_path = "Output Results";
   let output_directory: PathBuf = PathBuf::from(output_directory_path);

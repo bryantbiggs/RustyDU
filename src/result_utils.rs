@@ -1,9 +1,12 @@
-use std::{fs, io, path::{Path, PathBuf}};
-use std::fs::File;
-use std::io::BufReader;
-use csv::{ReaderBuilder, Writer, Position};
 use crate::extract::ExtractionResults;
 use crate::validate::ValidatedResults;
+use csv::{Position, ReaderBuilder, Writer};
+use std::fs::File;
+use std::io::BufReader;
+use std::{
+  fs, io,
+  path::{Path, PathBuf},
+};
 
 pub struct CSVWriter;
 
@@ -16,10 +19,10 @@ impl CSVWriter {
     let fields_to_extract = ["FieldName", "Value", "OcrConfidence", "Confidence", "IsMissing"];
 
     let file_name = Path::new(&document_path)
-        .file_stem()
-        .unwrap()
-        .to_string_lossy()
-        .to_string();
+      .file_stem()
+      .unwrap()
+      .to_string_lossy()
+      .to_string();
     let output_dir_path = Path::new(output_directory);
     fs::create_dir_all(&output_dir_path)?;
 
@@ -54,14 +57,12 @@ impl CSVWriter {
     output_directory: &PathBuf,
   ) -> Result<(), Box<dyn std::error::Error>> {
     let file_name = Path::new(&document_path)
-        .file_stem()
-        .unwrap()
-        .to_string_lossy()
-        .to_string();
+      .file_stem()
+      .unwrap()
+      .to_string_lossy()
+      .to_string();
 
-    let output_dir_path = {
-      Path::new(output_directory)
-    };
+    let output_dir_path = { Path::new(output_directory) };
 
     let output_file = output_dir_path.join(file_name + ".csv");
 
@@ -80,19 +81,26 @@ impl CSVWriter {
 
     writer.write_record(&fields_to_extract)?;
 
-    if let Some(validated_fields) = &validated_results.result.validated_extraction_results.results_document.fields {
+    if let Some(validated_fields) = &validated_results
+      .result
+      .validated_extraction_results
+      .results_document
+      .fields
+    {
       for validated_field in validated_fields {
         let field_name = validated_field;
 
-        let Some(extraction_field) = extraction_results.results_document.fields
-            .and_then(|fields| fields.iter().find(|&field| field.field_name.clone() == field_name))
-            .unwrap();
+        let Some(extraction_field) = extraction_results
+          .results_document
+          .fields
+          .and_then(|fields| fields.iter().find(|&field| field.field_name.clone() == field_name))
+          .unwrap();
 
         let extracted_value = extraction_field["Values"][0]["Value"].as_str().unwrap_or_default();
         let confidence = extraction_field["Values"][0]["Confidence"].as_str().unwrap_or_default();
         let ocr_confidence = extraction_field["Values"][0]["OcrConfidence"]
-            .as_str()
-            .unwrap_or_default();
+          .as_str()
+          .unwrap_or_default();
         let is_missing = extraction_field["IsMissing"].as_bool().unwrap_or_default();
 
         let validated_value = validated_field.values[0].value.clone();
@@ -120,9 +128,9 @@ impl CSVWriter {
   pub fn print_csv_results(document_path: &PathBuf, output_directory: &PathBuf) -> Result<(), io::Error> {
     // Extract file name without extension
     let file_name = std::path::Path::new(document_path)
-        .file_stem()
-        .unwrap_or_default()
-        .to_string_lossy();
+      .file_stem()
+      .unwrap_or_default()
+      .to_string_lossy();
 
     // Construct output directory path
     let output_dir_path = std::path::Path::new(output_directory);
@@ -132,17 +140,13 @@ impl CSVWriter {
 
     let file = File::open(&output_file)?;
     let reader = BufReader::new(file);
-    let mut csv_reader = ReaderBuilder::new()
-        .has_headers(true)
-        .from_reader(reader);
+    let mut csv_reader = ReaderBuilder::new().has_headers(true).from_reader(reader);
 
     // Get headers
     let headers = csv_reader.headers()?.clone();
 
     // Get maximum widths of headers
-    let mut max_widths = headers.iter()
-        .map(|header| header.len())
-        .collect::<Vec<_>>();
+    let mut max_widths = headers.iter().map(|header| header.len()).collect::<Vec<_>>();
 
     // Iterate over rows to find maximum widths
     for result in csv_reader.records() {
@@ -153,11 +157,12 @@ impl CSVWriter {
     }
 
     // Print headers
-    let header_format = headers.iter()
-        .zip(max_widths.iter())
-        .map(|(header, &width)| format!("{:<width$}", header, width = width))
-        .collect::<Vec<_>>()
-        .join("|");
+    let header_format = headers
+      .iter()
+      .zip(max_widths.iter())
+      .map(|(header, &width)| format!("{:<width$}", header, width = width))
+      .collect::<Vec<_>>()
+      .join("|");
     println!("{}", header_format);
     println!("{}", "-".repeat(header_format.len()));
 
@@ -168,11 +173,12 @@ impl CSVWriter {
     // Print rows
     for result in csv_reader.records() {
       let record = result?;
-      let row_format = record.iter()
-          .zip(max_widths.iter())
-          .map(|(field, &width)| format!("{:<width$}", field, width = width))
-          .collect::<Vec<_>>()
-          .join("|");
+      let row_format = record
+        .iter()
+        .zip(max_widths.iter())
+        .map(|(field, &width)| format!("{:<width$}", field, width = width))
+        .collect::<Vec<_>>()
+        .join("|");
       println!("{}", row_format);
     }
 

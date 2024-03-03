@@ -156,7 +156,12 @@ impl Extract {
     }
   }
 
-  pub async fn extract_document(&self, extractor_id: &str, document_id: &str, prompts: Option<Value>) -> Option<ExtractionResults> {
+  pub async fn extract_document(
+    &self,
+    extractor_id: &str,
+    document_id: &str,
+    prompts: Option<Value>,
+  ) -> Option<ExtractionResults> {
     // Define the API endpoint for document extraction
     let api_url = format!(
       "{}/{}/extractors/{}/extraction?api-version=1",
@@ -164,10 +169,7 @@ impl Extract {
     );
 
     // Prepare request data
-    let data = ExtractionData {
-      document_id,
-      prompts,
-    };
+    let data = ExtractionData { document_id, prompts };
 
     // Prepare request
     let client = Client::new();

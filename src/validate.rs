@@ -1,10 +1,13 @@
 use std::time::Duration;
 
-use reqwest::{header::{HeaderMap, ACCEPT, AUTHORIZATION, CONTENT_TYPE}, Client};
-use serde::{Deserialize, Serialize};
-use serde_json::json;
 use crate::classify::ClassificationResults;
 use crate::extract::ExtractionResults;
+use reqwest::{
+  header::{HeaderMap, ACCEPT, AUTHORIZATION, CONTENT_TYPE},
+  Client,
+};
+use serde::{Deserialize, Serialize};
+use serde_json::json;
 
 pub struct Validate {
   base_url: String,
@@ -220,10 +223,7 @@ impl Validate {
     );
 
     let mut headers = HeaderMap::new();
-    headers.insert(
-      AUTHORIZATION,
-      format!("Bearer {}", self.bearer_token).parse().unwrap(),
-    );
+    headers.insert(AUTHORIZATION, format!("Bearer {}", self.bearer_token).parse().unwrap());
     headers.insert(ACCEPT, "application/json".parse().unwrap());
     headers.insert(CONTENT_TYPE, "application/json".parse().unwrap());
 
@@ -238,20 +238,14 @@ impl Validate {
         "extractionResult": extraction_results.clone(),
     });
 
-    match client
-        .post(&api_url)
-        .headers(headers)
-        .json(&payload)
-        .send()
-        .await
-    {
+    match client.post(&api_url).headers(headers).json(&payload).send().await {
       Ok(response) => {
         if response.status().is_success() {
           println!("Validation request sent!");
           let response_json = response.json().await.ok()?;
           return self
-              .submit_extraction_validation_request(&document_type_id, &response_json)
-              .await;
+            .submit_extraction_validation_request(&document_type_id, &response_json)
+            .await;
         } else {
           println!(
             "Error: {} - {}",
@@ -272,101 +266,101 @@ impl Validate {
   ) -> Option<ValidatedResults> {
     // Extract operation_id from response_data
     let operation_id = response
-        .json::<Value>() // Deserialize response body to JSON
-        .await // Await deserialization
-        .ok()? // If deserialization succeeds
-        .get("operationId") // Access "operationId" field
-        .cloned(); // Clone the value
+      .json::<Value>() // Deserialize response body to JSON
+      .await // Await deserialization
+      .ok()? // If deserialization succeeds
+      .get("operationId") // Access "operationId" field
+      .cloned(); // Clone the value
 
     let url = format!(
       "{}/{}/extractors/{}/validation/result/{}?api-version=1",
       self.base_url, self.project_id, document_type_id, operation_id
     );
 
-  let client = Client::new();
+    let client = Client::new();
 
-  loop {
-    match client
-      .get(&url)
-      .header("Authorization", format!("Bearer {}", self.bearer_token))
-      .send()
-      .await
-    {
-      Ok(response) => {
-        let response_data: serde_json::Value = match response.json().await {
-          Ok(data) => data,
-          Err(err) => {
-            eprintln!("Error parsing JSON response: {}", err);
-            return None;
-          }
-        };
+    loop {
+      match client
+        .get(&url)
+        .header("Authorization", format!("Bearer {}", self.bearer_token))
+        .send()
+        .await
+      {
+        Ok(response) => {
+          let response_data: serde_json::Value = match response.json().await {
+            Ok(data) => data,
+            Err(err) => {
+              eprintln!("Error parsing JSON response: {}", err);
+              return None;
+            }
+          };
 
-        match response_data["status"].as_str() {
-          Some("Succeeded") => {
-            println!("Extraction Validation request submitted successfully!");
-            loop {
-              match client
-                .get(&url)
-                .header("Authorization", format!("Bearer {}", self.bearer_token))
-                .send()
-                .await
-              {
-                Ok(response) => {
-                  let response_data: serde_json::Value = match response.json().await {
-                    Ok(data) => data,
-                    Err(err) => {
-                      eprintln!("Error parsing JSON response: {}", err);
-                      return None;
-                    }
-                  };
+          match response_data["status"].as_str() {
+            Some("Succeeded") => {
+              println!("Extraction Validation request submitted successfully!");
+              loop {
+                match client
+                  .get(&url)
+                  .header("Authorization", format!("Bearer {}", self.bearer_token))
+                  .send()
+                  .await
+                {
+                  Ok(response) => {
+                    let response_data: serde_json::Value = match response.json().await {
+                      Ok(data) => data,
+                      Err(err) => {
+                        eprintln!("Error parsing JSON response: {}", err);
+                        return None;
+                      }
+                    };
 
-                  match response_data["result"]["actionData"]["status"].as_str() {
-                    Some("Unassigned") => {
-                      println!("Validation Document Extraction is unassigned. Waiting...")
-                    }
-                    Some("Pending") => {
-                      println!("Validate Document Extraction in progress. Waiting...")
-                    }
-                    Some("Completed") => {
-                      println!("Validate Document Extraction is completed.");
-                      let validated_results: ValidatedResults = response_data;
+                    match response_data["result"]["actionData"]["status"].as_str() {
+                      Some("Unassigned") => {
+                        println!("Validation Document Extraction is unassigned. Waiting...")
+                      }
+                      Some("Pending") => {
+                        println!("Validate Document Extraction in progress. Waiting...")
+                      }
+                      Some("Completed") => {
+                        println!("Validate Document Extraction is completed.");
+                        let validated_results: ValidatedResults = response_data;
 
-                      return Some(validated_results);
+                        return Some(validated_results);
+                      }
+                      Some(status) => println!("Unknown validation action status: {}", status),
+                      None => {
+                        println!("No status found in actionData");
+                        return None;
+                      }
                     }
-                    Some(status) => println!("Unknown validation action status: {}", status),
-                    None => {
-                      println!("No status found in actionData");
-                      return None;
-                    }
+                    tokio::time::sleep(Duration::from_secs(5)).await; // Wait for 5 seconds before
+                                                                      // checking again
                   }
-                  tokio::time::sleep(Duration::from_secs(5)).await; // Wait for 5 seconds before
-                                                                    // checking again
-                }
-                Err(err) => {
-                  eprintln!("Error sending request: {}", err);
-                  return None;
+                  Err(err) => {
+                    eprintln!("Error sending request: {}", err);
+                    return None;
+                  }
                 }
               }
             }
+            Some("NotStarted") | Some("Running") | Some("Unassigned") => {
+              println!("Validation request status: {}", response_data["status"])
+            }
+            Some(status) => println!("Unknown validation request status: {}", status),
+            None => {
+              println!("No status found in response");
+              return None;
+            }
           }
-          Some("NotStarted") | Some("Running") | Some("Unassigned") => {
-            println!("Validation request status: {}", response_data["status"])
-          }
-          Some(status) => println!("Unknown validation request status: {}", status),
-          None => {
-            println!("No status found in response");
-            return None;
-          }
+          tokio::time::sleep(Duration::from_secs(5)).await; // Wait for 5 seconds before checking again
         }
-        tokio::time::sleep(Duration::from_secs(5)).await; // Wait for 5 seconds before checking again
-      }
-      Err(err) => {
-        eprintln!("Error sending request: {}", err);
-        return None;
+        Err(err) => {
+          eprintln!("Error sending request: {}", err);
+          return None;
+        }
       }
     }
   }
-}
 
   pub async fn validate_classification_results(
     &self,
