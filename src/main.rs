@@ -1,9 +1,9 @@
-mod auth;
-mod classify;
-mod digitize;
-mod extract;
-mod result_utils;
-mod validate;
+pub mod auth;
+pub mod classify;
+pub mod digitize;
+pub mod extract;
+pub mod result_utils;
+pub mod validate;
 
 use std::{env, path::PathBuf};
 
