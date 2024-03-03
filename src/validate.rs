@@ -264,9 +264,8 @@ impl Validate {
   async fn submit_extraction_validation_request(
     &self,
     document_type_id: &str,
-    operation_id: &str
+    operation_id: &str,
   ) -> Option<ValidatedResults> {
-
     let url = format!(
       "{}/{}/extractors/{}/validation/result/{}?api-version=1",
       self.base_url, self.project_id, document_type_id, operation_id
