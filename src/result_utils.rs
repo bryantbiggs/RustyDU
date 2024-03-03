@@ -31,11 +31,11 @@ impl CSVWriter {
 
     if let Some(fields) = &extraction_results.results_document.fields {
       for field in fields {
-          let field_name = field["FieldName"].as_str().unwrap_or_default();
-          let value = field["Values"][0]["Value"].as_str().unwrap_or_default();
-          let confidence = field["Values"][0]["Confidence"].as_str().unwrap_or_default();
-          let ocr_confidence = field["Values"][0]["OcrConfidence"].as_str().unwrap_or_default();
-          let is_missing = field["IsMissing"].as_bool().unwrap_or_default();
+          let field_name = field.field_name.clone();
+          let value = field.values[0].value.clone();
+          let confidence = field.values[0].confidence.clone();
+          let ocr_confidence = field.values[0].ocr_confidence.clone();
+          let is_missing = field.is_missing.clone();
 
           writer.write_record(&[field_name, value, ocr_confidence, confidence, &is_missing.to_string()])?;
         }
