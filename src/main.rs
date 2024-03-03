@@ -148,8 +148,8 @@ async fn process_documents_in_folder(
                       }
                     }
                   } else {
-                    for result in &classification_results.classificationResults {
-                      let document_type_id = &result.DocumentTypeId;
+                    for result in &classification_results.classification_results {
+                      let document_type_id = &result.document_type_id;
                       let extraction_prompts = if generative_extraction {
                         load_prompts(&document_type_id)
                       } else {
