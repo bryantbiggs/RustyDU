@@ -3,7 +3,7 @@ use reqwest::{
   Client,
 };
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::{Value};
 
 pub struct Classify {
   base_url: String,
@@ -68,7 +68,6 @@ impl Classify {
     document_id: &str,
     classifier: &str,
     prompts: Option<serde_json::Value>,
-    validate_classification: bool,
   ) -> Option<String> {
     // Define the API endpoint for document classification
     let api_url = format!(
@@ -85,12 +84,12 @@ impl Classify {
     // Prepare request
     let client = Client::new();
     let response = client
-      .post(&api_url)
-      .header(AUTHORIZATION, format!("Bearer {}", self.bearer_token))
-      .header(CONTENT_TYPE, "application/json")
-      .json(&data)
-      .send()
-      .await;
+        .post(&api_url)
+        .header(AUTHORIZATION, format!("Bearer {}", self.bearer_token))
+        .header(CONTENT_TYPE, "application/json")
+        .json(&data)
+        .send()
+        .await;
 
     // Process response
     match response {
@@ -98,30 +97,26 @@ impl Classify {
         reqwest::StatusCode::OK => {
           println!("Document successfully classified!");
           let classification_results: ClassificationResults = response.json().await.unwrap();
-          if validate_classification {
-            Some(json!(classification_results).to_string())
-          } else {
-            let mut document_type_id = None;
-            let mut classification_confidence = None;
-            for result in classification_results.classificationResults {
-              if result.DocumentId == document_id {
-                document_type_id = Some(result.DocumentTypeId);
-                classification_confidence = Some(result.Confidence);
-                break;
-              }
+          let mut document_type_id = None;
+          let mut classification_confidence = None;
+          for result in classification_results.classificationResults {
+            if result.DocumentId == document_id {
+              document_type_id = Some(result.DocumentTypeId);
+              classification_confidence = Some(result.Confidence);
+              break;
             }
-            if let (Some(document_type_id), Some(classification_confidence)) =
+          }
+          if let (Some(document_type_id), Some(classification_confidence)) =
               (document_type_id, classification_confidence)
-            {
-              println!(
-                "Document Type ID: {}, Confidence: {}\n",
-                document_type_id, classification_confidence
-              );
-              Some(document_type_id)
-            } else {
-              println!("Document ID not found in classification results.");
-              None
-            }
+          {
+            println!(
+              "Document Type ID: {}, Confidence: {}\n",
+              document_type_id, classification_confidence
+            );
+            Some(document_type_id)
+          } else {
+            println!("Document ID not found in classification results.");
+            None
           }
         }
         _ => {

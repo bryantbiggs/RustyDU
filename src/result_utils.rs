@@ -1,9 +1,7 @@
-use std::{
-  fs,
-  path::{Path, PathBuf},
-};
-
-use csv::Writer;
+use std::{fs, io, path::{Path, PathBuf}};
+use std::fs::File;
+use std::io::BufReader;
+use csv::{ReaderBuilder, Writer, Position};
 
 pub struct CSVWriter;
 
@@ -11,7 +9,7 @@ impl CSVWriter {
   pub fn write_extraction_results_to_csv(
     extraction_results: &serde_json::Value,
     document_path: &PathBuf,
-    output_directory: &str,
+    output_directory: &PathBuf,
   ) -> Result<(), Box<dyn std::error::Error>> {
     let fields_to_extract = ["FieldName", "Value", "OcrConfidence", "Confidence", "IsMissing"];
 
@@ -49,6 +47,7 @@ impl CSVWriter {
     validated_results: &serde_json::Value,
     extraction_results: &serde_json::Value,
     document_path: &PathBuf,
+    output_directory: &PathBuf,
   ) -> Result<(), Box<dyn std::error::Error>> {
     let file_name = Path::new(&document_path)
       .file_stem()
@@ -57,7 +56,7 @@ impl CSVWriter {
       .to_string();
 
     let output_dir_path = {
-      Path::new("output_results") // Use default if not provided
+      Path::new(output_directory)
     };
 
     let output_file = output_dir_path.join(file_name + ".csv");
@@ -114,6 +113,68 @@ impl CSVWriter {
     }
 
     writer.flush()?;
+    Ok(())
+  }
+
+  pub fn print_csv_results(document_path: &PathBuf, output_directory: &PathBuf) -> Result<(), io::Error> {
+    // Extract file name without extension
+    let file_name = std::path::Path::new(document_path)
+        .file_stem()
+        .unwrap_or_default()
+        .to_string_lossy();
+
+    // Construct output directory path
+    let output_dir_path = std::path::Path::new(output_directory);
+
+    // Construct output file path with .csv extension
+    let output_file = output_dir_path.join(format!("{}.csv", file_name));
+
+    let file = File::open(&output_file)?;
+    let reader = BufReader::new(file);
+    let mut csv_reader = ReaderBuilder::new()
+        .has_headers(true)
+        .from_reader(reader);
+
+    // Get headers
+    let headers = csv_reader.headers()?.clone();
+
+    // Get maximum widths of headers
+    let mut max_widths = headers.iter()
+        .map(|header| header.len())
+        .collect::<Vec<_>>();
+
+    // Iterate over rows to find maximum widths
+    for result in csv_reader.records() {
+      let record = result?;
+      for (index, field) in record.iter().enumerate() {
+        max_widths[index] = max_widths[index].max(field.len());
+      }
+    }
+
+    // Print headers
+    let header_format = headers.iter()
+        .zip(max_widths.iter())
+        .map(|(header, &width)| format!("{:<width$}", header, width = width))
+        .collect::<Vec<_>>()
+        .join("|");
+    println!("{}", header_format);
+    println!("{}", "-".repeat(header_format.len()));
+
+    // Reset reader to the beginning of the file
+    let pos = Position::new();
+    // Seek to the specified position (start of the file)
+    csv_reader.seek(pos)?;
+    // Print rows
+    for result in csv_reader.records() {
+      let record = result?;
+      let row_format = record.iter()
+          .zip(max_widths.iter())
+          .map(|(field, &width)| format!("{:<width$}", field, width = width))
+          .collect::<Vec<_>>()
+          .join("|");
+      println!("{}", row_format);
+    }
+
     Ok(())
   }
 }

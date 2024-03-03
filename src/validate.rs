@@ -4,11 +4,197 @@ use reqwest::{
   header::{HeaderMap, ACCEPT, AUTHORIZATION, CONTENT_TYPE},
   Client,
 };
+use serde::{Deserialize, Serialize};
+use serde_json::json;
 
 pub struct Validate {
   base_url: String,
   project_id: String,
   bearer_token: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct OperationResponse {
+  operationId: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ValidatedResults {
+  pub result: ValidationResult,
+  pub status: String,
+  pub created_at: String,
+  pub last_updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ValidationResult {
+  pub action_data: ActionData,
+  pub validated_extraction_results: ValidatedExtractionResults,
+  pub action_status: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ActionData {
+  pub action_data_type: String,
+  pub id: i32,
+  pub status: String,
+  pub title: String,
+  pub priority: String,
+  pub task_catalog_name: String,
+  pub task_url: String,
+  pub folder_path: String,
+  pub folder_id: i32,
+  pub data: ActionDataDetail,
+  pub action: String,
+  pub is_deleted: bool,
+  pub assigned_to_user: Option<User>,
+  pub creator_user: User,
+  pub deleter_user: Option<User>,
+  pub last_modifier_user: User,
+  pub completed_by_user: User,
+  pub creation_time: String,
+  pub last_assigned_time: String,
+  pub completion_time: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ActionDataDetail {
+  pub validated_extraction_results_path: String,
+  pub document_rejection_details: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct User {
+  pub id: i32,
+  pub email_address: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ValidatedExtractionResults {
+  pub document_id: String,
+  pub results_version: i32,
+  pub results_document: ResultsDocument,
+  pub extractor_payloads: Option<serde_json::Value>,
+  pub business_rules_results: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResultsDocument {
+  pub bounds: Bounds,
+  pub language: String,
+  pub document_group: String,
+  pub document_category: String,
+  pub document_type_id: String,
+  pub document_type_name: String,
+  pub document_type_data_version: i32,
+  pub data_version: i32,
+  pub document_type_source: String,
+  pub document_type_field: DocumentTypeField,
+  pub fields: Vec<Field>,
+  pub tables: Option<Vec<Table>>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Bounds {
+  pub start_page: i32,
+  pub page_count: i32,
+  pub text_start_index: i32,
+  pub text_length: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DocumentTypeField {
+  pub components: Vec<String>,
+  pub value: String,
+  pub unformatted_value: String,
+  pub reference: Reference,
+  pub derived_fields: Vec<String>,
+  pub confidence: f64,
+  pub operator_confirmed: bool,
+  pub ocr_confidence: f64,
+  pub text_type: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Reference {
+  pub text_start_index: i32,
+  pub text_length: i32,
+  pub tokens: Vec<Token>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Token {
+  pub text_start_index: i32,
+  pub text_length: i32,
+  pub page: i32,
+  pub page_width: f64,
+  pub page_height: f64,
+  pub boxes: Vec<Vec<f64>>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Field {
+  pub field_id: String,
+  pub field_name: String,
+  pub field_type: String,
+  pub is_missing: bool,
+  pub data_source: String,
+  pub values: Vec<Value>,
+  pub data_version: i32,
+  pub operator_confirmed: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Value {
+  pub components: Vec<String>,
+  pub value: String,
+  pub unformatted_value: String,
+  pub reference: Reference,
+  pub derived_fields: Vec<String>,
+  pub confidence: f64,
+  pub operator_confirmed: bool,
+  pub ocr_confidence: f64,
+  pub text_type: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Table {
+  pub field_id: String,
+  pub field_name: String,
+  pub is_missing: bool,
+  pub data_source: String,
+  pub data_version: i32,
+  pub operator_confirmed: bool,
+  pub values: Vec<TableValue>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TableValue {
+  pub operator_confirmed: bool,
+  pub confidence: f64,
+  pub ocr_confidence: f64,
+  pub cells: Vec<Cell>,
+  pub column_info: Vec<ColumnInfo>,
+  pub number_of_rows: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Cell {
+  pub row_index: i32,
+  pub column_index: i32,
+  pub is_header: bool,
+  pub is_missing: bool,
+  pub operator_confirmed: bool,
+  pub data_source: String,
+  pub data_version: i32,
+  pub values: Option<Vec<String>>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ColumnInfo {
+  pub field_id: String,
+  pub field_name: String,
+  pub field_type: String,
 }
 
 impl Validate {
@@ -33,11 +219,14 @@ impl Validate {
     );
 
     let mut headers = HeaderMap::new();
-    headers.insert(AUTHORIZATION, format!("Bearer {}", self.bearer_token).parse().unwrap());
-    headers.insert(ACCEPT, "text/plain".parse().unwrap());
+    headers.insert(
+      AUTHORIZATION,
+      format!("Bearer {}", self.bearer_token).parse().unwrap(),
+    );
+    headers.insert(ACCEPT, "application/json".parse().unwrap());
     headers.insert(CONTENT_TYPE, "application/json".parse().unwrap());
 
-    let payload = serde_json::json!({
+    let payload = json!({
         "documentId": document_id,
         "actionTitle": format!("Validate - {}", extractor_id),
         "actionPriority": "Medium",
@@ -48,16 +237,19 @@ impl Validate {
         "extractionResult": extraction_results["extractionResult"].clone(),
     });
 
-    match client.post(&api_url).headers(headers).json(&payload).send().await {
+    match client
+        .post(&api_url)
+        .headers(headers)
+        .json(&payload)
+        .send()
+        .await
+    {
       Ok(response) => {
         if response.status().is_success() {
           println!("Validation request sent!");
-          if let Some(operation_id) = self
-            .submit_extraction_validation_request(extractor_id, &(response))
-            .await
-          {
-            return Some(operation_id);
-          }
+          return self
+              .submit_extraction_validation_request(extractor_id, &(response))
+              .await;
         } else {
           println!(
             "Error: {} - {}",

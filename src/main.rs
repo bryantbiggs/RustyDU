@@ -53,6 +53,7 @@ async fn process_documents_in_folder(
   validate_extraction: bool,
   generative_classification: bool,
   generative_extraction: bool,
+  output_directory: PathBuf,
 ) {
   // Load environment variables
   let (app_id, app_secret, auth_url, base_url, project_id) = load_env_vars();
@@ -102,7 +103,6 @@ async fn process_documents_in_folder(
                   &document_id,
                   classifier,
                   classification_prompts.clone(),
-                  validate_classification,
                 )
                 .await
               {
@@ -128,21 +128,21 @@ async fn process_documents_in_folder(
                         .await
                       {
                         if !validate_extraction {
-                          if let Err(err) = CSVWriter::write_extraction_results_to_csv(&extraction_results, &path, "") {
+                          if let Err(err) = CSVWriter::write_extraction_results_to_csv(&extraction_results, &path, &output_directory) {
                             eprintln!("Error writing extraction results to CSV: {}", err);
                           }
-                          CSVWriter::pprint_csv_results(&path);
+                          CSVWriter::print_csv_results(&path, &output_directory);
                         } else {
                           if let Some(validated_results) = validate_client
                             .validate_extraction_results(&document_type_id, &document_id, &extraction_results)
                             .await
                           {
                             if let Err(err) =
-                              CSVWriter::write_validated_results_to_csv(&validated_results, &extraction_results, &path)
+                              CSVWriter::write_validated_results_to_csv(&validated_results, &extraction_results, &path, &output_directory)
                             {
                               eprintln!("Error writing validated results to CSV: {}", err);
                             }
-                            CSVWriter::pprint_csv_results(&path);
+                            CSVWriter::print_csv_results(&path, &output_directory);
                           }
                         }
                       }
@@ -164,7 +164,7 @@ async fn process_documents_in_folder(
                         .await
                       {
                         if !validate_extraction {
-                          if let Err(err) = CSVWriter::write_extraction_results_to_csv(&extraction_results, &path, "") {
+                          if let Err(err) = CSVWriter::write_extraction_results_to_csv(&extraction_results, &path, &output_directory) {
                             eprintln!("Error writing extraction results to CSV: {}", err);
                           }
                         } else {
@@ -173,7 +173,7 @@ async fn process_documents_in_folder(
                             .await
                           {
                             if let Err(err) =
-                              CSVWriter::write_validated_results_to_csv(&validated_results, &extraction_results, &path)
+                              CSVWriter::write_validated_results_to_csv(&validated_results, &extraction_results, &path, &output_directory)
                             {
                               eprintln!("Error writing validated results to CSV: {}", err);
                             }
@@ -230,6 +230,9 @@ async fn main() {
     )
     .get_matches();
 
+
+  let output_directory_path = "Output Results";
+  let output_directory: PathBuf = PathBuf::from(output_directory_path);
   let folder_path = matches.get_one::<PathBuf>("folder").expect("required");
   let validate_classification = matches.get_flag("validate_classification");
   let validate_extraction = matches.get_flag("validate_extraction");
@@ -243,6 +246,7 @@ async fn main() {
     validate_extraction,
     generative_classification,
     generative_extraction,
+    output_directory,
   )
   .await
 }
