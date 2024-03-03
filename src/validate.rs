@@ -7,7 +7,7 @@ use reqwest::{
   Client,
 };
 use serde::{Deserialize, Serialize};
-use serde_json::json;
+use serde_json::{Error, json};
 
 pub struct Validate {
   base_url: String,
@@ -317,9 +317,14 @@ impl Validate {
                       }
                       Some("Completed") => {
                         println!("Validate Document Extraction is completed.");
-                        let validated_results: ValidatedResults = response_data;
+                        let validated_results: Result<ValidatedResults, _> = serde_json::from_value(response_data.clone());
+                        match validated_results {
+                          Ok(validated_results) => {
+                            return Some(validated_results);
+                          }
+                          _ => {}
+                        }
 
-                        return Some(validated_results);
                       }
                       Some(status) => println!("Unknown validation action status: {}", status),
                       None => {
