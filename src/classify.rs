@@ -20,12 +20,12 @@ struct ClassificationData<'a> {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ClassificationResults {
-  classificationResults: Vec<ClassificationResult>,
+  pub(crate) classificationResults: Vec<ClassificationResult>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ClassificationResult {
-  DocumentTypeId: String,
+  pub(crate) DocumentTypeId: String,
   DocumentId: String,
   Confidence: f64,
   OcrConfidence: f64,
@@ -68,7 +68,7 @@ impl Classify {
     document_id: &str,
     classifier: &str,
     prompts: Option<serde_json::Value>,
-  ) -> Option<String> {
+  ) -> Option<ClassificationResults> {
     // Define the API endpoint for document classification
     let api_url = format!(
       "{}/{}/classifiers/{}/classification?api-version=1",
@@ -118,6 +118,7 @@ impl Classify {
             println!("Document ID not found in classification results.");
             None
           }
+          Some(classification_results)
         }
         _ => {
           println!("Error: {} - {}", response.status(), response.text().await.unwrap());

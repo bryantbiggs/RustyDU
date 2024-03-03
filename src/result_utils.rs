@@ -2,12 +2,14 @@ use std::{fs, io, path::{Path, PathBuf}};
 use std::fs::File;
 use std::io::BufReader;
 use csv::{ReaderBuilder, Writer, Position};
+use crate::extract::ExtractionResults;
+use crate::validate::ValidatedResults;
 
 pub struct CSVWriter;
 
 impl CSVWriter {
   pub fn write_extraction_results_to_csv(
-    extraction_results: &serde_json::Value,
+    extraction_results: &ExtractionResults,
     document_path: &PathBuf,
     output_directory: &PathBuf,
   ) -> Result<(), Box<dyn std::error::Error>> {
@@ -27,16 +29,18 @@ impl CSVWriter {
 
     writer.write_record(&fields_to_extract)?;
 
-    if let Some(fields) = extraction_results["extractionResult"]["ResultsDocument"]["Fields"].as_array() {
+    if let Some(fields) = &extraction_results.results_document.fields {
       for field in fields {
-        let field_name = field["FieldName"].as_str().unwrap_or_default();
-        let value = field["Values"][0]["Value"].as_str().unwrap_or_default();
-        let confidence = field["Values"][0]["Confidence"].as_str().unwrap_or_default();
-        let ocr_confidence = field["Values"][0]["OcrConfidence"].as_str().unwrap_or_default();
-        let is_missing = field["IsMissing"].as_bool().unwrap_or_default();
+          let field_name = field["FieldName"].as_str().unwrap_or_default();
+          let value = field["Values"][0]["Value"].as_str().unwrap_or_default();
+          let confidence = field["Values"][0]["Confidence"].as_str().unwrap_or_default();
+          let ocr_confidence = field["Values"][0]["OcrConfidence"].as_str().unwrap_or_default();
+          let is_missing = field["IsMissing"].as_bool().unwrap_or_default();
 
-        writer.write_record(&[field_name, value, ocr_confidence, confidence, &is_missing.to_string()])?;
-      }
+          writer.write_record(&[field_name, value, ocr_confidence, confidence, &is_missing.to_string()])?;
+        }
+    } else {
+      println!("No fields found in extraction results.");
     }
 
     writer.flush()?;
@@ -44,8 +48,8 @@ impl CSVWriter {
   }
 
   pub fn write_validated_results_to_csv(
-    validated_results: &serde_json::Value,
-    extraction_results: &serde_json::Value,
+    validated_results: &ValidatedResults,
+    extraction_results: &ExtractionResults,
     document_path: &PathBuf,
     output_directory: &PathBuf,
   ) -> Result<(), Box<dyn std::error::Error>> {
@@ -76,14 +80,11 @@ impl CSVWriter {
 
     writer.write_record(&fields_to_extract)?;
 
-    if let Some(validated_fields) =
-      validated_results["result"]["validatedExtractionResults"]["ResultsDocument"]["Fields"].as_array()
-    {
+    if let Some(validated_fields) = validated_results.result.validated_extraction_results.results_document.fields {
       for validated_field in validated_fields {
-        let field_name = validated_field["FieldName"].as_str().unwrap_or_default();
+        let field_name = validated_field;
 
-        let extraction_field = extraction_results["extractionResult"]["ResultsDocument"]["Fields"]
-          .as_array()
+        let Some(extraction_field) = &extraction_results.results_document.fields
           .and_then(|fields| fields.iter().find(|&field| field["FieldName"] == field_name))
           .unwrap();
 

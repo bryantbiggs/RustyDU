@@ -12,138 +12,139 @@ pub struct Extract {
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "PascalCase")]
 struct ExtractionData<'a> {
-  DocumentId: &'a str,
+  document_id: &'a str,
   #[serde(flatten)]
   prompts: Option<Value>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct ExtractionResult {
-  DocumentId: String,
-  ResultsVersion: i32,
-  ResultsDocument: ResultsDocument,
-  ExtractorPayloads: Option<String>,
-  BusinessRulesResults: Option<String>,
+pub struct ExtractionResults {
+  pub document_id: String,
+  pub results_version: i32,
+  pub results_document: ResultsDocument,
+  pub extractor_payloads: Option<String>,
+  pub business_rules_results: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct ResultsDocument {
-  Bounds: Bounds,
-  Language: String,
-  DocumentGroup: String,
-  DocumentCategory: String,
-  DocumentTypeId: String,
-  DocumentTypeName: String,
-  DocumentTypeDataVersion: i32,
-  DataVersion: i32,
-  DocumentTypeSource: String,
-  DocumentTypeField: DocumentTypeField,
-  Fields: Vec<Field>,
-  Tables: Vec<Table>,
+pub struct ResultsDocument {
+  pub bounds: Bounds,
+  pub language: String,
+  pub document_group: String,
+  pub document_category: String,
+  pub document_type_id: String,
+  pub document_type_name: String,
+  pub document_type_data_version: i32,
+  pub data_version: i32,
+  pub document_type_source: String,
+  pub document_type_field: DocumentTypeField,
+  pub fields: Option<Vec<Field>>,
+  pub tables: Option<Vec<Table>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Bounds {
-  StartPage: i32,
-  PageCount: i32,
-  TextStartIndex: i32,
-  TextLength: i32,
+pub struct Bounds {
+  pub start_page: i32,
+  pub page_count: i32,
+  pub text_start_index: i32,
+  pub text_length: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct DocumentTypeField {
-  Components: Vec<String>,
-  Value: String,
-  UnformattedValue: String,
-  Reference: Reference,
-  DerivedFields: Vec<String>,
-  Confidence: f64,
-  OperatorConfirmed: bool,
-  OcrConfidence: f64,
-  TextType: String,
+pub struct DocumentTypeField {
+  pub components: Vec<String>,
+  pub value: String,
+  pub unformatted_value: String,
+  pub reference: Reference,
+  pub derived_fields: Vec<String>,
+  pub confidence: f64,
+  pub operator_confirmed: bool,
+  pub ocr_confidence: f64,
+  pub text_type: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Reference {
-  TextStartIndex: i32,
-  TextLength: i32,
-  Tokens: Vec<Token>,
+pub struct Reference {
+  pub text_start_index: i32,
+  pub text_length: i32,
+  pub tokens: Vec<Token>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Token {
-  TextStartIndex: i32,
-  TextLength: i32,
-  Page: i32,
-  PageWidth: f64,
-  PageHeight: f64,
-  Boxes: Vec<Vec<f64>>,
+pub struct Token {
+  pub text_start_index: i32,
+  pub text_length: i32,
+  pub page: i32,
+  pub page_width: f64,
+  pub page_height: f64,
+  pub boxes: Vec<Vec<f64>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Field {
-  FieldId: String,
-  FieldName: String,
-  FieldType: String,
-  IsMissing: bool,
-  DataSource: String,
-  Values: Vec<Value>,
-  DataVersion: i32,
-  OperatorConfirmed: bool,
+pub struct Field {
+  pub field_id: String,
+  pub field_name: String,
+  pub field_type: String,
+  pub is_missing: bool,
+  pub data_source: String,
+  pub values: Vec<FieldValue>,
+  pub data_version: i32,
+  pub operator_confirmed: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct FieldValue {
-  Components: Vec<String>,
-  Value: String,
-  UnformattedValue: String,
-  Reference: Reference,
-  DerivedFields: Vec<String>,
-  Confidence: f64,
-  OperatorConfirmed: bool,
-  OcrConfidence: f64,
-  TextType: String,
+pub struct FieldValue {
+  pub components: Vec<String>,
+  pub value: String,
+  pub unformatted_value: String,
+  pub reference: Reference,
+  pub derived_fields: Vec<String>,
+  pub confidence: f64,
+  pub operator_confirmed: bool,
+  pub ocr_confidence: f64,
+  pub text_type: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Table {
-  FieldId: String,
-  FieldName: String,
-  IsMissing: bool,
-  DataSource: String,
-  DataVersion: i32,
-  OperatorConfirmed: bool,
-  Values: Vec<TableValue>,
+pub struct Table {
+  pub field_id: String,
+  pub field_name: String,
+  pub is_missing: bool,
+  pub data_source: String,
+  pub data_version: i32,
+  pub operator_confirmed: bool,
+  pub values: Vec<TableValue>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct TableValue {
-  OperatorConfirmed: bool,
-  Confidence: f64,
-  OcrConfidence: f64,
-  Cells: Vec<Cell>,
-  ColumnInfo: Vec<ColumnInfo>,
-  NumberOfRows: i32,
+pub struct TableValue {
+  pub operator_confirmed: bool,
+  pub confidence: f64,
+  pub ocr_confidence: f64,
+  pub cells: Vec<Cell>,
+  pub column_info: Vec<ColumnInfo>,
+  pub number_of_rows: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Cell {
-  RowIndex: i32,
-  ColumnIndex: i32,
-  IsHeader: bool,
-  IsMissing: bool,
-  OperatorConfirmed: bool,
-  DataSource: String,
-  DataVersion: i32,
-  Values: Option<Vec<String>>,
+pub struct Cell {
+  pub row_index: i32,
+  pub column_index: i32,
+  pub is_header: bool,
+  pub is_missing: bool,
+  pub operator_confirmed: bool,
+  pub data_source: String,
+  pub data_version: i32,
+  pub values: Option<Vec<String>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct ColumnInfo {
-  FieldId: String,
-  FieldName: String,
-  FieldType: String,
+pub struct ColumnInfo {
+  pub field_id: String,
+  pub field_name: String,
+  pub field_type: String,
 }
 
 impl Extract {
@@ -155,7 +156,7 @@ impl Extract {
     }
   }
 
-  pub async fn extract_document(&self, extractor_id: &str, document_id: &str, prompts: Option<Value>) -> Option<Value> {
+  pub async fn extract_document(&self, extractor_id: &str, document_id: &str, prompts: Option<Value>) -> Option<ExtractionResults> {
     // Define the API endpoint for document extraction
     let api_url = format!(
       "{}/{}/extractors/{}/extraction?api-version=1",
@@ -164,7 +165,7 @@ impl Extract {
 
     // Prepare request data
     let data = ExtractionData {
-      DocumentId: document_id,
+      document_id,
       prompts,
     };
 
@@ -183,8 +184,8 @@ impl Extract {
       Ok(response) => match response.status() {
         reqwest::StatusCode::OK => {
           println!("Document successfully extracted!\n");
-          let extraction_results: ExtractionResult = response.json().await.unwrap();
-          Some(json!(extraction_results))
+          let extraction_results: ExtractionResults = response.json().await.unwrap();
+          Some(extraction_results)
         }
         _ => {
           println!("Error: {} - {}", response.status(), response.text().await.unwrap());

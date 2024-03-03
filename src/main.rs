@@ -9,7 +9,7 @@ use std::{env, path::PathBuf};
 
 use auth::Authentication;
 use clap::{Arg, Command};
-use classify::Classify;
+use classify::{Classify, ClassificationResults, ClassificationResult};
 use digitize::Digitize;
 use extract::Extract;
 use result_utils::CSVWriter;
@@ -87,31 +87,30 @@ async fn process_documents_in_folder(
       if let Some(extension) = path.extension() {
         let extension = extension.to_string_lossy().to_lowercase();
         if extension == "png"
-          || extension == "jpe"
-          || extension == "jpg"
-          || extension == "jpeg"
-          || extension == "tiff"
-          || extension == "tif"
-          || extension == "bmp"
-          || extension == "pdf"
+            || extension == "jpe"
+            || extension == "jpg"
+            || extension == "jpeg"
+            || extension == "tiff"
+            || extension == "tif"
+            || extension == "bmp"
+            || extension == "pdf"
         {
           println!("Processing document: {:?}", path);
           match digitize_client.start(&path).await {
             Some(document_id) => {
               match classify_client
-                .classify_document(
-                  &document_id,
-                  classifier,
-                  classification_prompts.clone(),
-                )
-                .await
+                  .classify_document(
+                    &document_id,
+                    classifier,
+                    classification_prompts.clone(),
+                  )
+                  .await
               {
-                Some(document_type_id_value) => {
-                  let document_type_id = document_type_id_value.as_str().unwrap_or_default().to_string();
+                Some(classification_results) => {
                   if validate_classification {
-                    if let Some(classification_results) = validate_client
-                      .validate_classification_results(&document_id, &document_type_id)
-                      .await
+                    if let Some(document_type_id) = validate_client
+                        .validate_classification_results(&document_id, &classification_results)
+                        .await
                     {
                       let extraction_prompts = if generative_extraction {
                         load_prompts(&document_type_id)
@@ -124,21 +123,35 @@ async fn process_documents_in_folder(
                         &classification_results
                       };
                       if let Some(extraction_results) = extract_client
-                        .extract_document(classification_results, &document_id, extraction_prompts)
-                        .await
+                          .extract_document(classification_results, &document_id, extraction_prompts)
+                          .await
                       {
                         if !validate_extraction {
-                          if let Err(err) = CSVWriter::write_extraction_results_to_csv(&extraction_results, &path, &output_directory) {
+                          if let Err(err) =
+                              CSVWriter::write_extraction_results_to_csv(
+                                &extraction_results,
+                                &path,
+                                &output_directory,
+                              )
+                          {
                             eprintln!("Error writing extraction results to CSV: {}", err);
                           }
                           CSVWriter::print_csv_results(&path, &output_directory);
                         } else {
                           if let Some(validated_results) = validate_client
-                            .validate_extraction_results(&document_type_id, &document_id, &extraction_results)
-                            .await
+                              .validate_extraction_results(
+                                &document_type_id,
+                                &document_id,
+                                &extraction_results,
+                              )
+                              .await
                           {
-                            if let Err(err) =
-                              CSVWriter::write_validated_results_to_csv(&validated_results, &extraction_results, &path, &output_directory)
+                            if let Err(err) = CSVWriter::write_validated_results_to_csv(
+                              &validated_results,
+                              &extraction_results,
+                              &path,
+                              &output_directory,
+                            )
                             {
                               eprintln!("Error writing validated results to CSV: {}", err);
                             }
@@ -148,32 +161,47 @@ async fn process_documents_in_folder(
                       }
                     }
                   } else {
-                    let classification_results = document_type_id.clone();
-                    if let extraction_prompts = if generative_extraction {
-                      load_prompts(&document_type_id)
-                    } else {
-                      None
-                    } {
-                      let classification_results = if generative_extraction {
+                    for result in &classification_results.classificationResults {
+                      let document_type_id = &result.DocumentTypeId;
+                      let extraction_prompts = if generative_extraction {
+                        load_prompts(&document_type_id)
+                      } else {
+                        None
+                      };
+                      let document_type_id = if generative_extraction {
                         "generative_extractor"
                       } else {
-                        classification_results
+                        document_type_id
                       };
                       if let Some(extraction_results) = extract_client
-                        .extract_document(classification_results, &document_id, extraction_prompts)
-                        .await
+                          .extract_document(document_type_id, &document_id, extraction_prompts)
+                          .await
                       {
                         if !validate_extraction {
-                          if let Err(err) = CSVWriter::write_extraction_results_to_csv(&extraction_results, &path, &output_directory) {
+                          if let Err(err) =
+                              CSVWriter::write_extraction_results_to_csv(
+                                &extraction_results,
+                                &path,
+                                &output_directory,
+                              )
+                          {
                             eprintln!("Error writing extraction results to CSV: {}", err);
                           }
                         } else {
                           if let Some(validated_results) = validate_client
-                            .validate_extraction_results(&document_type_id, &document_id, &extraction_results)
-                            .await
+                              .validate_extraction_results(
+                                &document_type_id,
+                                &document_id,
+                                &extraction_results,
+                              )
+                              .await
                           {
-                            if let Err(err) =
-                              CSVWriter::write_validated_results_to_csv(&validated_results, &extraction_results, &path, &output_directory)
+                            if let Err(err) = CSVWriter::write_validated_results_to_csv(
+                              &validated_results,
+                              &extraction_results,
+                              &path,
+                              &output_directory,
+                            )
                             {
                               eprintln!("Error writing validated results to CSV: {}", err);
                             }
@@ -193,6 +221,7 @@ async fn process_documents_in_folder(
     }
   }
 }
+
 
 #[tokio::main]
 async fn main() {

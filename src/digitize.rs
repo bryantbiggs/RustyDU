@@ -1,11 +1,19 @@
 use std::{fs::File, io::Read, path::PathBuf};
 
 use reqwest::{header::AUTHORIZATION, Client};
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 pub struct Digitize {
   base_url: String,
   project_id: String,
   bearer_token: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Document {
+  #[serde(rename = "documentId")]
+  document_id: String,
 }
 
 impl Digitize {
@@ -54,14 +62,10 @@ impl Digitize {
       Ok(response) => match response.status() {
         reqwest::StatusCode::ACCEPTED => {
           println!("Document successfully digitized!");
-          let response_data: serde_json::Value = response.json().await.unwrap();
-          if let Some(document_id) = response_data.get("documentId") {
-            println!("Document ID: {}", document_id);
-            Some(document_id.to_string())
-          } else {
-            println!("Error: No document ID received");
-            None
-          }
+          let response_data: Document = response.json().await.unwrap();
+          let document_id = response_data.document_id;
+          println!("Document ID: {}", document_id);
+          Some(document_id)
         }
         _ => {
           println!("Error: {} - {}", response.status(), response.text().await.unwrap());
