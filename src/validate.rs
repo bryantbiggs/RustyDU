@@ -200,6 +200,46 @@ pub struct ColumnInfo {
   pub field_type: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ValidateClassification {
+  pub result: ClassificationResult,
+  pub status: String,
+  pub created_at: String,
+  pub last_updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ClassificationResult {
+  pub action_data: ActionData,
+  pub validated_classification_results: Vec<ValidatedClassificationResult>,
+  pub action_status: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ActionDataDetails {
+  pub validated_classification_results_path: String,
+  pub document_rejection_details: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ValidatedClassificationResult {
+  pub document_type_id: String,
+  pub document_id: String,
+  pub confidence: f64,
+  pub ocr_confidence: f64,
+  pub reference: Reference,
+  pub document_bounds: DocumentBounds,
+  pub classifier_name: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DocumentBounds {
+  pub start_page: usize,
+  pub page_count: usize,
+  pub text_start_index: usize,
+  pub text_length: usize,
+}
+
 impl Validate {
   pub fn new(base_url: &str, project_id: &str, bearer_token: &str) -> Self {
     Validate {
@@ -238,10 +278,16 @@ impl Validate {
         "extractionResult": extraction_results.clone(),
     });
 
-    match client.post(&api_url).headers(headers).json(&payload).send().await {
+    match client
+        .post(&api_url)
+        .headers(headers)
+        .json(&payload)
+        .send()
+        .await
+    {
       Ok(response) => {
         if response.status().is_success() {
-          println!("Validation request sent!");
+          println!("Extraction Validation request sent!");
           let response_json: OperationResponse = response.json().await.ok()?;
           let operation_id = response_json.operation_id;
           Some(operation_id.clone());
@@ -365,16 +411,19 @@ impl Validate {
     &self,
     document_id: &str,
     classification_results: &ClassificationResults,
-  ) -> Option<String> {
+  ) -> Option<ValidatedClassificationResult> {
+    let client = Client::new();
+
     let api_url = format!(
       "{}/{}/classifiers/ml-classification/validation/start?api-version=1",
       self.base_url, self.project_id
     );
 
-    let Some(document_type_id) = match classification_results.classification_results[0].document_type_id {
-      Some(id) => id.to_string(),
-      None => return None,
-    };
+    let document_type_id = classification_results
+        .classification_results
+        .get(0) // Get the first element
+        .and_then(|result| *result.document_type_id.as_ref()) // Access document_type_id as Option<&String>
+        .map(|id| id.to_string());
 
     let mut headers = HeaderMap::new();
     headers.insert(AUTHORIZATION, format!("Bearer {}", self.bearer_token).parse().unwrap());
@@ -392,7 +441,7 @@ impl Validate {
         "classificationResults": classification_results,
     });
 
-    match Client::new()
+    match client
       .post(&api_url)
       .headers(headers)
       .json(&payload)
@@ -402,11 +451,12 @@ impl Validate {
       Ok(response) => {
         if response.status().is_success() {
           println!("Classification Validation request sent!");
-          if let Some(operation_id) = self.submit_classification_validation_request(&response).await {
-            if let Some(document_type_id) = self.get_document_type_id(&operation_id).await {
-              return Some(document_type_id);
-            }
-          }
+          let response_json: OperationResponse = response.json().await.ok()?;
+          let operation_id = response_json.operation_id;
+          Some(operation_id.clone());
+          return self
+              .submit_extraction_validation_request(&document_type_id, &operation_id)
+              .await;
         } else {
           println!(
             "Error: {} - {}",
@@ -420,21 +470,9 @@ impl Validate {
     None
   }
 
-  async fn submit_classification_validation_request(&self, response: &reqwest::Response) -> Option<String> {
-    let response_data: serde_json::Value = match response.json().await {
-      Ok(data) => data,
-      Err(err) => {
-        eprintln!("Error parsing JSON response: {}", err);
-        return None;
-      }
-    };
+  async fn submit_classification_validation_request(&self, operation_id: &str) -> Option<String> {
 
-    let operation_id = match response_data.get("operationId").and_then(|id| id.as_str()) {
-      Some(id) => id.to_string(),
-      None => return None,
-    };
-
-    let url = format!(
+    let api_url = format!(
       "{}/{}/classifiers/ml-classification/validation/result/{}?api-version=1",
       self.base_url, self.project_id, operation_id
     );
@@ -442,7 +480,7 @@ impl Validate {
 
     loop {
       match client
-        .get(&url)
+        .get(&api_url)
         .header("Authorization", format!("Bearer {}", self.bearer_token))
         .send()
         .await

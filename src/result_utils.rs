@@ -45,7 +45,7 @@ impl CSVWriter {
           value,
           ocr_confidence,
           confidence.to_string(),
-          &is_missing.to_string(),
+          is_missing.to_string(),
         ])?;
       }
     } else {
