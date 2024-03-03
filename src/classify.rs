@@ -26,7 +26,7 @@ pub struct ClassificationResults {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ClassificationResult {
-  pub(crate) document_type_id: String,
+  pub(crate) document_type_id: Option<String>,
   document_id: String,
   confidence: f64,
   ocr_confidence: f64,
@@ -107,17 +107,14 @@ impl Classify {
               break;
             }
           }
-          if let (Some(document_type_id), Some(classification_confidence)) =
-            (document_type_id, classification_confidence)
-          {
+          if let (Some(document_type_id), Some(classification_confidence)) = (document_type_id, classification_confidence) {
             println!(
-              "Document Type ID: {}, Confidence: {}\n",
+              "Document Type ID: {:?}, Confidence: {}\n",
               document_type_id, classification_confidence
             );
-            Some(document_type_id)
           } else {
             println!("Document ID not found in classification results.");
-            return None;
+            return None
           }
           Some(classification_results)
         }

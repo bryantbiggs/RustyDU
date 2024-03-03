@@ -40,7 +40,7 @@ impl CSVWriter {
         let ocr_confidence = field.values[0].ocr_confidence.clone().to_string();
         let is_missing = field.is_missing.clone();
 
-        writer.write_record(&[field_name, value, ocr_confidence, confidence, &is_missing.to_string()])?;
+        writer.write_record(&[field_name, value, ocr_confidence, confidence.to_string(), &is_missing.to_string()])?;
       }
     } else {
       println!("No fields found in extraction results.");

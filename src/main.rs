@@ -28,7 +28,7 @@ fn load_env_vars() -> (String, String, String, String, String) {
 }
 
 // Function to load prompts from a JSON file based on the document type ID
-fn load_prompts(document_type_id: &str) -> Option<Value> {
+fn load_prompts(document_type_id: &&Option<String>) -> Option<Value> {
   let prompts_directory = "Generative Prompts";
   let prompts_file = format!("{}/{}_prompts.json", prompts_directory, document_type_id);
   match std::fs::read_to_string(prompts_file) {
@@ -158,7 +158,7 @@ async fn process_documents_in_folder(
                       let document_type_id = if generative_extraction {
                         "generative_extractor"
                       } else {
-                        document_type_id
+                        Some(document_type_id)
                       };
                       if let Some(extraction_results) = extract_client
                         .extract_document(document_type_id, &document_id, extraction_prompts)

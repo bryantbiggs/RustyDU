@@ -242,9 +242,11 @@ impl Validate {
       Ok(response) => {
         if response.status().is_success() {
           println!("Validation request sent!");
-          let response_json = response.json().await.ok()?;
+          let response_json: OperationResponse = response.json().await.ok()?;
+          let operation_id = response_json.operation_id;
+          Some(operation_id.clone());
           return self
-            .submit_extraction_validation_request(&document_type_id, &response_json)
+            .submit_extraction_validation_request(&document_type_id, &operation_id)
             .await;
         } else {
           println!(
@@ -262,15 +264,8 @@ impl Validate {
   async fn submit_extraction_validation_request(
     &self,
     document_type_id: &str,
-    response: &serde_json,
+    operation_id: &str
   ) -> Option<ValidatedResults> {
-    // Extract operation_id from response_data
-    let operation_id = response
-      .json::<Value>() // Deserialize response body to JSON
-      .await // Await deserialization
-      .ok()? // If deserialization succeeds
-      .get("operationId") // Access "operationId" field
-      .cloned(); // Clone the value
 
     let url = format!(
       "{}/{}/extractors/{}/validation/result/{}?api-version=1",
@@ -372,7 +367,7 @@ impl Validate {
       self.base_url, self.project_id
     );
 
-    let Some(document_type_id) = match classification_results.classificationResults[0].DocumentTypeId {
+    let Some(document_type_id) = match classification_results.classification_results[0].document_type_id {
       Some(id) => id.to_string(),
       None => return None,
     };
