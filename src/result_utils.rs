@@ -16,10 +16,10 @@ impl CSVWriter {
     let fields_to_extract = ["FieldName", "Value", "OcrConfidence", "Confidence", "IsMissing"];
 
     let file_name = Path::new(&document_path)
-      .file_stem()
-      .unwrap()
-      .to_string_lossy()
-      .to_string();
+        .file_stem()
+        .unwrap()
+        .to_string_lossy()
+        .to_string();
     let output_dir_path = Path::new(output_directory);
     fs::create_dir_all(&output_dir_path)?;
 
@@ -31,14 +31,14 @@ impl CSVWriter {
 
     if let Some(fields) = &extraction_results.results_document.fields {
       for field in fields {
-          let field_name = field.field_name.clone();
-          let value = field.values[0].value.clone();
-          let confidence = field.values[0].confidence.clone();
-          let ocr_confidence = field.values[0].ocr_confidence.clone();
-          let is_missing = field.is_missing.clone();
+        let field_name = field.field_name.clone();
+        let value = field.values[0].value.clone();
+        let confidence = field.values[0].confidence.clone();
+        let ocr_confidence = field.values[0].ocr_confidence.clone().to_string();
+        let is_missing = field.is_missing.clone();
 
-          writer.write_record(&[field_name, value, ocr_confidence, confidence, &is_missing.to_string()])?;
-        }
+        writer.write_record(&[field_name, value, ocr_confidence, confidence, &is_missing.to_string()])?;
+      }
     } else {
       println!("No fields found in extraction results.");
     }
@@ -54,10 +54,10 @@ impl CSVWriter {
     output_directory: &PathBuf,
   ) -> Result<(), Box<dyn std::error::Error>> {
     let file_name = Path::new(&document_path)
-      .file_stem()
-      .unwrap()
-      .to_string_lossy()
-      .to_string();
+        .file_stem()
+        .unwrap()
+        .to_string_lossy()
+        .to_string();
 
     let output_dir_path = {
       Path::new(output_directory)
@@ -80,23 +80,23 @@ impl CSVWriter {
 
     writer.write_record(&fields_to_extract)?;
 
-    if let Some(validated_fields) = validated_results.result.validated_extraction_results.results_document.fields {
+    if let Some(validated_fields) = &validated_results.result.validated_extraction_results.results_document.fields {
       for validated_field in validated_fields {
         let field_name = validated_field;
 
-        let Some(extraction_field) = &extraction_results.results_document.fields
-          .and_then(|fields| fields.iter().find(|&field| field["FieldName"] == field_name))
-          .unwrap();
+        let Some(extraction_field) = extraction_results.results_document.fields
+            .and_then(|fields| fields.iter().find(|&field| field.field_name.clone() == field_name))
+            .unwrap();
 
         let extracted_value = extraction_field["Values"][0]["Value"].as_str().unwrap_or_default();
         let confidence = extraction_field["Values"][0]["Confidence"].as_str().unwrap_or_default();
         let ocr_confidence = extraction_field["Values"][0]["OcrConfidence"]
-          .as_str()
-          .unwrap_or_default();
+            .as_str()
+            .unwrap_or_default();
         let is_missing = extraction_field["IsMissing"].as_bool().unwrap_or_default();
 
-        let validated_value = validated_field["Values"][0]["Value"].as_str().unwrap_or_default();
-        let operator_confirmed = validated_field["OperatorConfirmed"].as_bool().unwrap_or_default();
+        let validated_value = validated_field.values[0].value.clone();
+        let operator_confirmed = validated_field.is_missing.clone();
 
         let is_correct = validated_value.is_empty() && extracted_value.is_empty() || validated_value == extracted_value;
 

@@ -9,7 +9,7 @@ use std::{env, path::PathBuf};
 
 use auth::Authentication;
 use clap::{Arg, Command};
-use classify::{Classify, ClassificationResults, ClassificationResult};
+use classify::Classify;
 use digitize::Digitize;
 use extract::Extract;
 use result_utils::CSVWriter;

@@ -2,7 +2,6 @@ use std::{fs::File, io::Read, path::PathBuf};
 
 use reqwest::{header::AUTHORIZATION, Client};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
 pub struct Digitize {
   base_url: String,

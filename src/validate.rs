@@ -3,7 +3,7 @@ use std::time::Duration;
 use reqwest::{header::{HeaderMap, ACCEPT, AUTHORIZATION, CONTENT_TYPE}, Client};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use crate::classify::{Classify, ClassificationResults, ClassificationResult};
+use crate::classify::ClassificationResults;
 use crate::extract::ExtractionResults;
 
 pub struct Validate {
@@ -90,7 +90,7 @@ pub struct ResultsDocument {
   pub data_version: i32,
   pub document_type_source: String,
   pub document_type_field: DocumentTypeField,
-  pub fields: Vec<Field>,
+  pub fields: Option<Vec<Field>>,
   pub tables: Option<Vec<Table>>,
 }
 
@@ -229,13 +229,13 @@ impl Validate {
 
     let payload = json!({
         "documentId": document_id,
-        "actionTitle": format!("Validate - {}", extractor_id),
+        "actionTitle": format!("Validate - {}", document_type_id),
         "actionPriority": "Medium",
         "actionCatalog": "default_du_actions",
         "actionFolder": "Shared",
         "storageBucketName": "du_storage_bucket",
         "storageBucketDirectoryPath": "du_storage_bucket",
-        "extractionResult": extraction_results["extractionResult"].clone(),
+        "extractionResult": extraction_results.clone(),
     });
 
     match client

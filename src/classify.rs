@@ -116,7 +116,7 @@ impl Classify {
             Some(document_type_id)
           } else {
             println!("Document ID not found in classification results.");
-            None
+            return None
           }
           Some(classification_results)
         }
