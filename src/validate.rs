@@ -411,7 +411,7 @@ impl Validate {
     &self,
     document_id: &str,
     classification_results: &ClassificationResults,
-  ) -> Option<ValidatedClassificationResult> {
+  ) -> Option<String> {
     let client = Client::new();
 
     let api_url = format!(
@@ -422,8 +422,12 @@ impl Validate {
     let document_type_id = classification_results
         .classification_results
         .get(0) // Get the first element
-        .and_then(|result| *result.document_type_id.as_ref()) // Access document_type_id as Option<&String>
-        .map(|id| id.to_string());
+        .map(|result| result.document_type_id.clone());
+
+    let action_title = match document_type_id {
+      Some(id) => format!("Validate - {}", id),
+      None => "Validate - Unknown".to_string(),
+    };
 
     let mut headers = HeaderMap::new();
     headers.insert(AUTHORIZATION, format!("Bearer {}", self.bearer_token).parse().unwrap());
@@ -432,7 +436,7 @@ impl Validate {
 
     let payload = serde_json::json!({
         "documentId": document_id,
-        "actionTitle": format!("Validate - {}", document_type_id),
+        "actionTitle": action_title,
         "actionPriority": "Medium",
         "actionCatalog": "default_du_actions",
         "actionFolder": "Shared",
@@ -455,7 +459,7 @@ impl Validate {
           let operation_id = response_json.operation_id;
           Some(operation_id.clone());
           return self
-              .submit_extraction_validation_request(&document_type_id, &operation_id)
+              .submit_classification_validation_request(&operation_id)
               .await;
         } else {
           println!(

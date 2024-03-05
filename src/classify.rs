@@ -97,9 +97,9 @@ impl Classify {
           let classification_results: ClassificationResults = response.json().await.unwrap();
           let mut document_type_id = None;
           let mut classification_confidence = None;
-          for result in classification_results.classification_results {
+          for result in &classification_results.classification_results {
             if result.document_id == document_id {
-              document_type_id = Some(result.document_type_id);
+              document_type_id = Some(result.document_type_id.as_str());
               classification_confidence = Some(result.confidence);
               break;
             }
