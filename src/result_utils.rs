@@ -1,12 +1,14 @@
-use crate::extract::ExtractionResults;
-use crate::validate::ValidatedResults;
-use csv::{Position, ReaderBuilder, Writer};
-use std::fs::File;
-use std::io::BufReader;
 use std::{
-  fs, io,
+  fs,
+  fs::File,
+  io,
+  io::BufReader,
   path::{Path, PathBuf},
 };
+
+use csv::{Position, ReaderBuilder, Writer};
+
+use crate::{extract::ExtractionResults, validate::ValidatedResults};
 
 pub struct CSVWriter;
 
