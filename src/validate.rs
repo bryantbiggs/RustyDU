@@ -1,13 +1,13 @@
 use std::time::Duration;
 
-use crate::classify::ClassificationResults;
-use crate::extract::ExtractionResults;
 use reqwest::{
   header::{HeaderMap, ACCEPT, AUTHORIZATION, CONTENT_TYPE},
   Client,
 };
 use serde::{Deserialize, Serialize};
-use serde_json::{Error, json};
+use serde_json::{json, Error};
+
+use crate::{classify::ClassificationResults, extract::ExtractionResults};
 
 pub struct Validate {
   base_url: String,
@@ -278,13 +278,7 @@ impl Validate {
         "extractionResult": extraction_results.clone(),
     });
 
-    match client
-        .post(&api_url)
-        .headers(headers)
-        .json(&payload)
-        .send()
-        .await
-    {
+    match client.post(&api_url).headers(headers).json(&payload).send().await {
       Ok(response) => {
         if response.status().is_success() {
           println!("Extraction Validation request sent!");
@@ -363,14 +357,14 @@ impl Validate {
                       }
                       Some("Completed") => {
                         println!("Validate Document Extraction is completed.");
-                        let validated_results: Result<ValidatedResults, _> = serde_json::from_value(response_data.clone());
+                        let validated_results: Result<ValidatedResults, _> =
+                          serde_json::from_value(response_data.clone());
                         match validated_results {
                           Ok(validated_results) => {
                             return Some(validated_results);
                           }
                           _ => {}
                         }
-
                       }
                       Some(status) => println!("Unknown validation action status: {}", status),
                       None => {
@@ -420,9 +414,9 @@ impl Validate {
     );
 
     let document_type_id = classification_results
-        .classification_results
-        .get(0) // Get the first element
-        .map(|result| result.document_type_id.clone());
+      .classification_results
+      .get(0) // Get the first element
+      .map(|result| result.document_type_id.clone());
 
     let action_title = match document_type_id {
       Some(id) => format!("Validate - {}", id),
@@ -445,22 +439,14 @@ impl Validate {
         "classificationResults": classification_results,
     });
 
-    match client
-      .post(&api_url)
-      .headers(headers)
-      .json(&payload)
-      .send()
-      .await
-    {
+    match client.post(&api_url).headers(headers).json(&payload).send().await {
       Ok(response) => {
         if response.status().is_success() {
           println!("Classification Validation request sent!");
           let response_json: OperationResponse = response.json().await.ok()?;
           let operation_id = response_json.operation_id;
           Some(operation_id.clone());
-          return self
-              .submit_classification_validation_request(&operation_id)
-              .await;
+          return self.submit_classification_validation_request(&operation_id).await;
         } else {
           println!(
             "Error: {} - {}",
@@ -475,7 +461,6 @@ impl Validate {
   }
 
   async fn submit_classification_validation_request(&self, operation_id: &str) -> Option<String> {
-
     let api_url = format!(
       "{}/{}/classifiers/ml-classification/validation/result/{}?api-version=1",
       self.base_url, self.project_id, operation_id
